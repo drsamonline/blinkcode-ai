@@ -1,0 +1,16 @@
+{
+  "name": "blinkcode-ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Single-shot optical file transfer PWA: neural-style compression + SpectraCode colour matrix",
+  "scripts": {
+    "build:model": "node tools/build-model.js",
+    "serve": "node tools/serve.js",
+    "test": "node --test tests/",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "eslint": "^9.15.0"
+  }
+}

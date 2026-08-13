@@ -1,0 +1,37 @@
+export default [
+  {
+    files: ['**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'module',
+      globals: {
+        self: 'readonly',
+        window: 'readonly',
+        document: 'readonly',
+        navigator: 'readonly',
+        performance: 'readonly',
+        console: 'readonly',
+        fetch: 'readonly',
+        caches: 'readonly',
+        indexedDB: 'readonly',
+        crypto: 'readonly',
+        Worker: 'readonly',
+        Blob: 'readonly',
+        URL: 'readonly',
+        Response: 'readonly',
+        ImageData: 'readonly',
+        OffscreenCanvas: 'readonly',
+        createImageBitmap: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      'no-undef': 'error',
+      eqeqeq: ['error', 'smart'],
+    },
+  },
+];

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#07080d" />
+    <title>BlinkCode AI — single-shot optical transfer</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>BlinkCode<span>AI</span></h1>
+      <div id="model-chip" class="chip" data-state="pending">checking model…</div>
+    </header>
+
+    <div id="model-progress" class="progress" hidden>
+      <div class="bar"><span id="model-bar"></span></div>
+      <p id="model-progress-label">Downloading compression model (one time only)…</p>
+    </div>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="send" role="tab">Send</button>
+      <button class="tab" data-tab="receive" role="tab">Receive</button>
+      <button class="tab" data-tab="about" role="tab">How it works</button>
+    </nav>
+
+    <main>
+      <section id="tab-send" class="panel active">
+        <label class="dropzone" id="dropzone">
+          <input type="file" id="file-input" hidden />
+          <strong>Choose a file</strong>
+          <span>or drop it here — up to 5,129 bytes of File DNA fits in one code</span>
+        </label>
+
+        <fieldset class="modes">
+          <legend>Compression mode</legend>
+          <label><input type="radio" name="mode" value="0" checked /> Lossless (any file type)</label>
+          <label><input type="radio" name="mode" value="1" /> Fast perceptual (images only)</label>
+        </fieldset>
+
+        <div class="row">
+          <button id="compress-btn" class="primary" disabled>Compress</button>
+          <button id="show-btn" disabled>Show SpectraCode</button>
+          <button id="selftest-btn" disabled>Run loopback self-test</button>
+        </div>
+
+        <div id="send-status" class="status"></div>
+        <dl id="send-stats" class="stats" hidden></dl>
+        <canvas id="preview-canvas" class="preview" width="420" height="420" hidden></canvas>
+      </section>
+
+      <section id="tab-receive" class="panel">
+        <div class="camera-wrap">
+          <video id="camera" playsinline muted></video>
+          <div id="camera-hint" class="camera-hint">Camera off</div>
+        </div>
+        <div class="row">
+          <button id="camera-btn" class="primary">Start camera</button>
+          <button id="capture-btn" disabled>Capture &amp; decode</button>
+          <label class="file-button">
+            Decode a photo
+            <input type="file" id="photo-input" accept="image/*" hidden />
+          </label>
+        </div>
+        <div id="receive-status" class="status"></div>
+        <div id="receive-result" class="result" hidden>
+          <h2 id="result-name"></h2>
+          <p id="result-meta"></p>
+          <img id="result-image" alt="Recovered image preview" hidden />
+          <pre id="result-text" hidden></pre>
+          <div class="row">
+            <a id="result-download" class="primary button" download>Save file</a>
+            <button id="retry-btn">Retry</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-about" class="panel">
+        <h2>How it works</h2>
+        <ol>
+          <li><strong>One-time model download.</strong> A Universal Compression Graph bundle is fetched once and kept in Cache Storage and IndexedDB. Every later launch is fully offline.</li>
+          <li><strong>File DNA.</strong> Bytes are compressed with an order-1 context model driving an arithmetic coder. Images can instead be reduced to a 64-value perceptual latent.</li>
+          <li><strong>SpectraCode.</strong> The container is Reed-Solomon protected (RS 255,223) and painted as a 120×80 grid of 32 palette colours with four bullseye markers and a 36-colour calibration strip.</li>
+          <li><strong>One shot.</strong> The receiver photographs a single frame, warps it with a homography from the marker centres, fits a colour-correction matrix from the strip, classifies every cell and rebuilds the file.</li>
+        </ol>
+        <h3>Honest limits</h3>
+        <p>
+          One SpectraCode carries <strong>5,129 bytes</strong> of compressed payload — no compressor can push an
+          arbitrary large file below that, because lossless compression cannot beat the entropy of the data.
+          Real ratios here are roughly 2–4× on text and source code, ~1× on already-compressed data (JPEG, ZIP, MP4),
+          and 1000×+ only in perceptual image mode, which throws away detail and returns a 32×32-detail
+          reconstruction rather than the original photo.
+        </p>
+      </section>
+    </main>
+
+    <div id="fullscreen" class="fullscreen" hidden>
+      <canvas id="spectra-canvas"></canvas>
+      <button id="close-fullscreen">Close</button>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
