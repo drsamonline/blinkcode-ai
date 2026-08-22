@@ -308,6 +308,10 @@ button.primary,
   word-break: break-word;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .fullscreen {
   position: fixed;
   inset: 0;

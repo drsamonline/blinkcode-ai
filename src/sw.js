@@ -2,7 +2,7 @@
 // The model bundle is deliberately not precached — `lib/storage.js` owns that
 // one-time download and its own cache entry.
 
-const SHELL_CACHE = 'blinkcode-shell-v1';
+const SHELL_CACHE = 'blinkcode-shell-v2';
 const SHELL = [
   './',
   'index.html',

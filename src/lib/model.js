@@ -10,7 +10,8 @@
 
 const MAGIC = 'UCGMODEL';
 export const MODEL_VERSION = 1;
-export const MODEL_URL = 'models/ucg-v1.bin';
+// Resolved against this module so workers in any directory hit the same URL.
+export const MODEL_URL = new URL('../models/ucg-v1.bin', import.meta.url).href;
 export const ALPHABET = 257;
 
 const DTYPES = {
