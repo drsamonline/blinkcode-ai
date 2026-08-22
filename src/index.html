@@ -32,13 +32,37 @@
         <label class="dropzone" id="dropzone">
           <input type="file" id="file-input" hidden />
           <strong>Choose a file</strong>
-          <span>or drop it here — up to 5,129 bytes of File DNA fits in one code</span>
+          <span id="dropzone-hint">or drop it here — larger files stream as several frames</span>
         </label>
+
+        <details class="text-send">
+          <summary>…or send text / a link instead</summary>
+          <textarea id="text-input" rows="3" placeholder="Paste a note, a URL, a wifi password…"></textarea>
+          <div class="row">
+            <button id="paste-btn">Paste from clipboard</button>
+            <button id="use-text-btn">Use this text</button>
+          </div>
+        </details>
 
         <fieldset class="modes">
           <legend>Compression mode</legend>
           <label><input type="radio" name="mode" value="0" checked /> Lossless (any file type)</label>
           <label><input type="radio" name="mode" value="1" /> Fast perceptual (images only)</label>
+        </fieldset>
+
+        <fieldset class="modes">
+          <legend>Code density</legend>
+          <label>
+            <select id="density-select">
+              <option value="standard" selected>Standard — 120×80 cells, fewer frames</option>
+              <option value="robust">Robust — 60×40 cells, survives shaky handheld shots</option>
+            </select>
+          </label>
+          <label class="inline">
+            Frame rate
+            <input id="fps-input" type="range" min="1" max="6" step="1" value="3" />
+            <span id="fps-label">3 / s</span>
+          </label>
         </fieldset>
 
         <div class="row">
@@ -58,12 +82,16 @@
           <div id="camera-hint" class="camera-hint">Camera off</div>
         </div>
         <div class="row">
-          <button id="camera-btn" class="primary">Start camera</button>
-          <button id="capture-btn" disabled>Capture &amp; decode</button>
+          <button id="camera-btn" class="primary">Start scanning</button>
+          <button id="capture-btn" disabled>Decode this frame</button>
           <label class="file-button">
             Decode a photo
             <input type="file" id="photo-input" accept="image/*" hidden />
           </label>
+        </div>
+        <div id="scan-progress" class="progress" hidden>
+          <div class="bar"><span id="scan-bar"></span></div>
+          <p id="scan-label">Waiting for frames…</p>
         </div>
         <div id="receive-status" class="status"></div>
         <div id="receive-result" class="result" hidden>
@@ -73,7 +101,9 @@
           <pre id="result-text" hidden></pre>
           <div class="row">
             <a id="result-download" class="primary button" download>Save file</a>
-            <button id="retry-btn">Retry</button>
+            <button id="share-btn" hidden>Share</button>
+            <button id="copy-btn" hidden>Copy text</button>
+            <button id="retry-btn">Scan another</button>
           </div>
         </div>
       </section>
@@ -84,12 +114,14 @@
           <li><strong>One-time model download.</strong> A Universal Compression Graph bundle is fetched once and kept in Cache Storage and IndexedDB. Every later launch is fully offline.</li>
           <li><strong>File DNA.</strong> Bytes are compressed with an order-1 context model driving an arithmetic coder. Images can instead be reduced to a 64-value perceptual latent.</li>
           <li><strong>SpectraCode.</strong> The container is Reed-Solomon protected (RS 255,223) and painted as a 120×80 grid of 32 palette colours with four bullseye markers and a 36-colour calibration strip.</li>
-          <li><strong>One shot.</strong> The receiver photographs a single frame, warps it with a homography from the marker centres, fits a colour-correction matrix from the strip, classifies every cell and rebuilds the file.</li>
+          <li><strong>Capture.</strong> The receiver warps each camera frame with a homography from the marker centres, fits a colour-correction matrix from the strip, classifies every cell and repairs damage with Reed-Solomon.</li>
+          <li><strong>Streaming.</strong> Anything larger than one code is split into numbered frames that loop on the sender's screen. The receiver scans continuously, collects the frames it is missing in any order, then verifies a CRC-32 before restoring the file.</li>
         </ol>
         <h3>Honest limits</h3>
         <p>
-          One SpectraCode carries <strong>5,129 bytes</strong> of compressed payload — no compressor can push an
-          arbitrary large file below that, because lossless compression cannot beat the entropy of the data.
+          One SpectraCode carries <strong>5,111 bytes</strong> of compressed payload (1,097 in robust density) — no
+          compressor can push an arbitrary large file below that, which is why bigger files are streamed over several
+          frames instead of one.
           Real ratios here are roughly 2–4× on text and source code, ~1× on already-compressed data (JPEG, ZIP, MP4),
           and 1000×+ only in perceptual image mode, which throws away detail and returns a 32×32-detail
           reconstruction rather than the original photo.
@@ -99,6 +131,7 @@
 
     <div id="fullscreen" class="fullscreen" hidden>
       <canvas id="spectra-canvas"></canvas>
+      <div id="frame-counter" class="frame-counter"></div>
       <button id="close-fullscreen">Close</button>
     </div>
 
