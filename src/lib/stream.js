@@ -63,10 +63,17 @@ export function parseFrame(bytes) {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const chunkLen = view.getUint16(12, false);
   if (FRAME_HEADER + chunkLen > bytes.length) throw new Error('frame chunk truncated');
+  const index = view.getUint16(4, false);
+  const count = view.getUint16(6, false);
+  // A header the RS decoder mis-corrected must not enter a collector, where an
+  // out-of-range index would leave the transfer permanently incomplete.
+  if (count === 0 || index >= count) {
+    throw new Error(`frame ${index} outside a transfer of ${count}`);
+  }
   return {
     transferId: view.getUint16(2, false),
-    index: view.getUint16(4, false),
-    count: view.getUint16(6, false),
+    index,
+    count,
     total: view.getUint32(8, false),
     checksum: view.getUint32(14, false),
     chunk: bytes.slice(FRAME_HEADER, FRAME_HEADER + chunkLen),
@@ -106,6 +113,9 @@ export class FrameCollector {
    * @returns {{fresh:boolean, restarted:boolean}} whether it added anything new
    */
   add(frame) {
+    if (frame.count === 0 || frame.index >= frame.count) {
+      throw new Error(`frame ${frame.index} outside a transfer of ${frame.count}`);
+    }
     const restarted = this.transferId !== null && frame.transferId !== this.transferId;
     if (restarted || this.transferId === null) {
       this.reset();

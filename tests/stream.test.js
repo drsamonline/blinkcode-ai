@@ -87,6 +87,22 @@ test('a corrupted chunk is caught by the transfer checksum', () => {
   assert.throws(() => collector.assemble(), /checksum/);
 });
 
+test('a frame index outside the transfer is rejected, not collected', () => {
+  const spec = specByName('standard');
+  const { frames } = splitIntoFrames(new Uint8Array(9000), spec, 5);
+  const bad = frames[0].slice();
+  new DataView(bad.buffer).setUint16(4, 9, false); // index 9 of a 2-frame transfer
+  assert.throws(() => parseFrame(bad), /outside a transfer/);
+
+  const collector = new FrameCollector();
+  collector.add(parseFrame(frames[0]));
+  assert.throws(
+    () => collector.add({ ...parseFrame(frames[1]), index: 9 }),
+    /outside a transfer/,
+  );
+  assert.equal(collector.received, 1);
+});
+
 test('crc32 matches the known check value', () => {
   assert.equal(crc32(new TextEncoder().encode('123456789')), 0xcbf43926);
 });
