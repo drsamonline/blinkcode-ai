@@ -2,7 +2,7 @@
 // The model bundle is deliberately not precached — `lib/storage.js` owns that
 // one-time download and its own cache entry.
 
-const SHELL_CACHE = 'blinkcode-shell-v2';
+const SHELL_CACHE = 'blinkcode-shell-v3';
 const SHELL = [
   './',
   'index.html',
@@ -22,6 +22,7 @@ const SHELL = [
   'lib/spectracode.js',
   'lib/spectra-decode.js',
   'lib/storage.js',
+  'lib/stream.js',
   'lib/surface.js',
   'workers/worker-rpc.js',
   'workers/model-loader.js',

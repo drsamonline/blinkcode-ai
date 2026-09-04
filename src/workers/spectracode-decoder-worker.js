@@ -14,11 +14,12 @@ serve({
   decode({ data, width, height }) {
     const started = performance.now();
     const image = { data: new Uint8ClampedArray(data), width, height };
-    const { payload, corrected, residual } = decodeSpectraCode(image);
+    const { payload, corrected, residual, density } = decodeSpectraCode(image);
     return {
       result: {
         payload,
         corrected,
+        density,
         residual: Math.round(residual * 10) / 10,
         elapsedMs: Math.round(performance.now() - started),
       },

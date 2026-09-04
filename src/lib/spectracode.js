@@ -1,4 +1,4 @@
-// SpectraCode: a single static colour matrix carrying the whole payload.
+// SpectraCode: a static colour matrix carrying one frame of a transfer.
 //
 // Canonical layout. Everything is expressed in fractions of the code region
 // (the area inside the black border), so the sender can render at any size and
@@ -6,29 +6,73 @@
 //
 //   +------------------------------------------+  black border
 //   |  (o)                                (o)  |  bullseye markers
-//   |     [36 reference colour patches]        |  calibration strip
+//   |  [m] [36 reference colour patches]       |  density patch + calibration
 //   |     +--------------------------------+   |
-//   |     |     120 x 80 payload cells     |   |
+//   |     |        cols x rows cells       |   |
 //   |     +--------------------------------+   |
 //   |  (o)                                (o)  |
 //   +------------------------------------------+
+//
+// The grid density is not fixed: a phone held at arm's length resolves far
+// fewer cells than a tripod shot, so the sender picks a density and records it
+// in the density patch. The receiver reads that patch before sampling.
 
 import { PALETTE, BITS_PER_CELL } from './palette.js';
 import { rsEncode, BLOCK_DATA, BLOCK_TOTAL } from './rs.js';
 
-export const GRID_COLS = 120;
-export const GRID_ROWS = 80;
-export const CELL_COUNT = GRID_COLS * GRID_ROWS;
-export const RAW_CAPACITY = Math.floor((CELL_COUNT * BITS_PER_CELL) / 8); // 6000 B
-export const RS_BLOCKS = Math.floor(RAW_CAPACITY / BLOCK_TOTAL); // 23
-export const PAYLOAD_CAPACITY = RS_BLOCKS * BLOCK_DATA; // 5129 B
+/** Build the derived parameters of one grid density. */
+function makeSpec(id, name, cols, rows, hint) {
+  const cellCount = cols * rows;
+  const rawCapacity = Math.floor((cellCount * BITS_PER_CELL) / 8);
+  const rsBlocks = Math.floor(rawCapacity / BLOCK_TOTAL);
+  return {
+    id,
+    name,
+    hint,
+    cols,
+    rows,
+    cellCount,
+    rawCapacity,
+    rsBlocks,
+    payloadCapacity: rsBlocks * BLOCK_DATA,
+  };
+}
+
+/**
+ * Densities, ordered by id. The id is painted into the density patch as
+ * `PALETTE[1 + id]`, so it must stay stable across versions.
+ */
+export const DENSITIES = [
+  makeSpec(0, 'standard', 120, 80, 'best capacity — steady hands or a tripod'),
+  makeSpec(1, 'robust', 60, 40, 'quarter the cells — handheld phones, poor light'),
+];
+
+export const SPEC = DENSITIES[0];
+export const GRID_COLS = SPEC.cols;
+export const GRID_ROWS = SPEC.rows;
+export const CELL_COUNT = SPEC.cellCount;
+export const RAW_CAPACITY = SPEC.rawCapacity;
+export const RS_BLOCKS = SPEC.rsBlocks;
+export const PAYLOAD_CAPACITY = SPEC.payloadCapacity;
+
+export function specById(id) {
+  return DENSITIES.find((d) => d.id === id) ?? null;
+}
+
+export function specByName(name) {
+  return DENSITIES.find((d) => d.name === name) ?? SPEC;
+}
 
 export const LAYOUT = {
   border: 0.012, // black border thickness, fraction of the code region
   marker: { inset: 0.05, radius: 0.032 },
+  density: { x0: 0.015, x1: 0.075, y0: 0.1, y1: 0.14 },
   calibration: { x0: 0.1, x1: 0.9, y0: 0.1, y1: 0.14, patches: PALETTE.length },
   payload: { x0: 0.1, x1: 0.9, y0: 0.18, y1: 0.9 },
 };
+
+/** Palette index used to paint the density patch of `spec`. */
+export const densityColourIndex = (spec) => 1 + spec.id;
 
 /** Canonical marker centres, clockwise from top-left, in code-region space. */
 export function markerCentres() {
@@ -47,33 +91,38 @@ export function calibrationPatchCentre(index) {
   return [x0 + w * (index + 0.5), (y0 + y1) / 2];
 }
 
-export function cellCentre(col, row) {
+export function densityPatchCentre() {
+  const { x0, x1, y0, y1 } = LAYOUT.density;
+  return [(x0 + x1) / 2, (y0 + y1) / 2];
+}
+
+export function cellCentre(col, row, spec = SPEC) {
   const { x0, x1, y0, y1 } = LAYOUT.payload;
   return [
-    x0 + ((x1 - x0) * (col + 0.5)) / GRID_COLS,
-    y0 + ((y1 - y0) * (row + 0.5)) / GRID_ROWS,
+    x0 + ((x1 - x0) * (col + 0.5)) / spec.cols,
+    y0 + ((y1 - y0) * (row + 0.5)) / spec.rows,
   ];
 }
 
 /**
- * Pack a payload into `CELL_COUNT` palette indices: RS-protect, pad, then slice
- * the bit stream into 5-bit symbols.
+ * Pack a payload into `spec.cellCount` palette indices: RS-protect, pad, then
+ * slice the bit stream into 5-bit symbols.
  */
-export function payloadToSymbols(payload) {
-  if (payload.length > PAYLOAD_CAPACITY) {
+export function payloadToSymbols(payload, spec = SPEC) {
+  if (payload.length > spec.payloadCapacity) {
     throw new Error(
-      `payload ${payload.length} B exceeds SpectraCode capacity ${PAYLOAD_CAPACITY} B`,
+      `payload ${payload.length} B exceeds SpectraCode capacity ${spec.payloadCapacity} B`,
     );
   }
-  const framed = new Uint8Array(RS_BLOCKS * BLOCK_DATA);
+  const framed = new Uint8Array(spec.rsBlocks * BLOCK_DATA);
   framed.set(payload);
   const coded = rsEncode(framed);
-  const bytes = new Uint8Array(RAW_CAPACITY);
-  bytes.set(coded.subarray(0, RAW_CAPACITY));
+  const bytes = new Uint8Array(spec.rawCapacity);
+  bytes.set(coded.subarray(0, spec.rawCapacity));
 
-  const symbols = new Uint8Array(CELL_COUNT);
+  const symbols = new Uint8Array(spec.cellCount);
   let bitPos = 0;
-  for (let i = 0; i < CELL_COUNT; i++) {
+  for (let i = 0; i < spec.cellCount; i++) {
     let v = 0;
     for (let b = 0; b < BITS_PER_CELL; b++, bitPos++) {
       const byte = bytes[bitPos >> 3] ?? 0;
@@ -85,8 +134,8 @@ export function payloadToSymbols(payload) {
 }
 
 /** Inverse of {@link payloadToSymbols} up to the RS layer (returns raw bytes). */
-export function symbolsToBytes(symbols) {
-  const bytes = new Uint8Array(RAW_CAPACITY);
+export function symbolsToBytes(symbols, spec = SPEC) {
+  const bytes = new Uint8Array(spec.rawCapacity);
   let bitPos = 0;
   for (let i = 0; i < symbols.length; i++) {
     const v = symbols[i];
@@ -100,10 +149,11 @@ export function symbolsToBytes(symbols) {
 /**
  * Draw a SpectraCode.
  * @param {{fillRect:Function, fillCircle:Function}} surface
- * @param {Uint8Array} symbols palette indices, length CELL_COUNT
+ * @param {Uint8Array} symbols palette indices, length spec.cellCount
  * @param {number} size square side in pixels
+ * @param {object} [spec] grid density, defaults to standard
  */
-export function drawSpectraCode(surface, symbols, size) {
+export function drawSpectraCode(surface, symbols, size, spec = SPEC) {
   const black = [0, 0, 0];
   const white = [255, 255, 255];
   surface.fillRect(0, 0, size, size, black);
@@ -115,12 +165,12 @@ export function drawSpectraCode(surface, symbols, size) {
   surface.fillRect(b, b, region, region, white);
 
   const { x0, x1, y0, y1 } = LAYOUT.payload;
-  const cw = ((x1 - x0) * region) / GRID_COLS;
-  const ch = ((y1 - y0) * region) / GRID_ROWS;
-  for (let row = 0; row < GRID_ROWS; row++) {
-    for (let col = 0; col < GRID_COLS; col++) {
-      const [cx, cy] = px(x0 + ((x1 - x0) * col) / GRID_COLS, y0 + ((y1 - y0) * row) / GRID_ROWS);
-      surface.fillRect(cx, cy, Math.ceil(cw) + 1, Math.ceil(ch) + 1, PALETTE[symbols[row * GRID_COLS + col]]);
+  const cw = ((x1 - x0) * region) / spec.cols;
+  const ch = ((y1 - y0) * region) / spec.rows;
+  for (let row = 0; row < spec.rows; row++) {
+    for (let col = 0; col < spec.cols; col++) {
+      const [cx, cy] = px(x0 + ((x1 - x0) * col) / spec.cols, y0 + ((y1 - y0) * row) / spec.rows);
+      surface.fillRect(cx, cy, Math.ceil(cw) + 1, Math.ceil(ch) + 1, PALETTE[symbols[row * spec.cols + col]]);
     }
   }
 
@@ -132,6 +182,15 @@ export function drawSpectraCode(surface, symbols, size) {
     const x = b + (cal.x0 + ((cal.x1 - cal.x0) * i) / cal.patches) * region;
     surface.fillRect(x, phTop, Math.ceil(pw) + 1, Math.ceil(ph), PALETTE[i]);
   }
+
+  const den = LAYOUT.density;
+  surface.fillRect(
+    b + den.x0 * region,
+    b + den.y0 * region,
+    Math.ceil((den.x1 - den.x0) * region),
+    Math.ceil((den.y1 - den.y0) * region),
+    PALETTE[densityColourIndex(spec)],
+  );
 
   const r = LAYOUT.marker.radius * region;
   for (const [fx, fy] of markerCentres()) {

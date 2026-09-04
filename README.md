@@ -1,16 +1,17 @@
 # BlinkCode AI
 
-Single-shot optical file transfer as an offline-first PWA. A file is compressed
-into a compact "File DNA" container, painted as **one static SpectraCode colour
-matrix**, and recovered from a single camera frame — no animated QR stream, no
-server, no network after the first launch.
+Optical file transfer as an offline-first PWA. A file is compressed into a
+compact "File DNA" container, painted as **SpectraCode colour matrices**, and
+recovered by pointing a camera at the sender's screen — no server, no network
+after the first launch. Small payloads fit in a single static frame; larger ones
+loop as a numbered frame sequence the receiver collects while scanning.
 
 ```
-file ─▶ order-1 arithmetic coder ─▶ File DNA ─▶ RS(255,223) ─▶ 120×80 colour grid
-                                                                     │
-                       file ◀─ arithmetic decoder ◀─ RS ◀─ cell classification
+file ─▶ order-1 arithmetic coder ─▶ File DNA ─▶ frames ─▶ RS(255,223) ─▶ colour grid
+                                                                            │
+              file ◀─ arithmetic decoder ◀─ CRC-32 ◀─ frame collector ◀─ RS ◀┘
                                                           ▲
-                       camera frame ─▶ bullseye detection ─▶ homography ─▶ colour correction
+              camera frames ─▶ bullseye detection ─▶ homography ─▶ colour correction
 ```
 
 ## Run it
@@ -21,10 +22,11 @@ npm run serve         # http://localhost:8080
 npm test              # codec + full optical loopback tests
 ```
 
-Open the app, pick a file, hit **Compress**, then **Show SpectraCode** on the
-sender and **Capture & decode** on the receiver. Without a second device, the
-**loopback self-test** button pushes the rendered code back through the real
-optical decoder.
+Open the app, pick a file (or paste text), hit **Compress**, then **Show
+SpectraCode** on the sender and **Start scanning** on the receiver — the
+receiver decodes continuously and shows how many frames it still needs. Without
+a second device, the **loopback self-test** button pushes every rendered frame
+back through the real optical decoder.
 
 ## What is actually implemented
 
@@ -36,6 +38,9 @@ optical decoder.
 | SpectraCode render: 36-colour palette, bullseye markers, calibration strip | real |
 | Reed-Solomon RS(255,223), corrects 16 bytes per block | real |
 | Marker detection → homography → 3×4 colour correction → cell classification | real |
+| Multi-frame streaming: chunk header, out-of-order collection, CRC-32 verify | real |
+| Two grid densities (120×80 / 60×40) signalled by a density patch and auto-detected | real |
+| Continuous camera auto-scan, wake lock while displaying, Web Share of results | real |
 | Workers for model loading, compression, decompression and optical decode | real |
 | Installable PWA with precached shell | real |
 
@@ -44,9 +49,11 @@ optical decoder.
 These matter more than the pitch, so they are stated plainly in the app's
 "How it works" tab too:
 
-- **One SpectraCode holds 5,129 payload bytes.** 120×80 cells × 5 bits = 6,000
-  bytes raw, minus Reed-Solomon parity. Files whose compressed form exceeds
-  that are rejected up front rather than silently truncated.
+- **One SpectraCode frame holds 5,111 payload bytes** (1,097 in robust density):
+  120×80 cells × 5 bits = 6,000 bytes raw, minus Reed-Solomon parity and the
+  18-byte frame header. Bigger files are split across frames, so throughput is
+  roughly `5 KB × frame rate` — about 15 KB/s at 3 frames per second, and every
+  missed frame costs a full loop.
 - **1000:1 lossless compression of arbitrary files is impossible.** Lossless
   coding cannot go below the entropy of the data; a universal 1000:1 compressor
   would let you recurse to one byte. Real measured ratios here: ~2–4× on text,
@@ -67,7 +74,8 @@ These matter more than the pitch, so they are stated plainly in the app's
 - **Camera decoding is validated in simulation**, not against physical phone
   optics: the test suite renders a code, applies perspective tilt, a colour cast
   and vignetting, and decodes it end to end. Real-world glare, motion blur and
-  low-end camera sensors will need per-cell voting and a smaller grid.
+  low-end camera sensors are what the robust density exists for; they may still
+  need per-cell voting and multi-frame averaging.
 
 ## Layout
 
@@ -85,6 +93,7 @@ src/
     spectracode.js    layout, symbol packing, renderer
     spectra-decode.js marker detection → payload bytes
     storage.js        one-time model download + offline persistence
+    stream.js         frame header, CRC-32, out-of-order frame collector
     surface.js        canvas / buffer drawing targets
   workers/            model loader, compression, decompression, optical decode
   models/ucg-v1.bin   downloadable model bundle

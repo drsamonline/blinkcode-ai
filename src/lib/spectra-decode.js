@@ -7,12 +7,13 @@
 import { PALETTE } from './palette.js';
 import { homography, applyHomography, fitColourCorrection } from './geometry.js';
 import {
-  GRID_COLS,
-  GRID_ROWS,
-  CELL_COUNT,
+  DENSITIES,
+  SPEC,
   LAYOUT,
   markerCentres,
   calibrationPatchCentre,
+  densityPatchCentre,
+  densityColourIndex,
   cellCentre,
   symbolsToBytes,
 } from './spectracode.js';
@@ -213,30 +214,25 @@ function classify(rgb, references) {
 }
 
 /**
- * Sample one candidate orientation.
- * @returns {{symbols: Uint8Array, residual: number}|null}
+ * Warp one candidate orientation and fit its colour correction. The grid
+ * density is read from the density patch, so a single pass tells us how many
+ * cells to sample.
+ * @returns {{residual: number, spec: object, sample: Function}|null}
  */
 function readWithQuad(image, quad) {
   const H = homography(markerCentres(), quad);
   if (!H) return null;
 
-  // Approximate on-screen cell size, used to size the sampling window.
   const [ax, ay] = applyHomography(H, LAYOUT.payload.x0, LAYOUT.payload.y0);
   const [bx, by] = applyHomography(H, LAYOUT.payload.x1, LAYOUT.payload.y1);
-  const cellPx = Math.max(
-    1,
-    Math.min(
-      Math.abs(bx - ax) / GRID_COLS,
-      Math.abs(by - ay) / GRID_ROWS,
-    ),
-  );
-  const cellRadius = Math.max(0, cellPx / 2 - 1);
+  const regionW = Math.abs(bx - ax);
+  const regionH = Math.abs(by - ay);
 
   const measured = [];
   for (let i = 0; i < PALETTE.length; i++) {
     const [fx, fy] = calibrationPatchCentre(i);
     const [x, y] = applyHomography(H, fx, fy);
-    measured.push(sampleAverage(image, x, y, Math.max(1, cellPx * 0.8)));
+    measured.push(sampleAverage(image, x, y, Math.max(1, regionW / SPEC.cols)));
   }
   const correct = fitColourCorrection(measured, PALETTE);
   let residual = 0;
@@ -249,17 +245,35 @@ function readWithQuad(image, quad) {
   }
   residual = Math.sqrt(residual / (measured.length * 3));
 
-  const symbols = new Uint8Array(CELL_COUNT);
+  const [dx, dy] = applyHomography(H, ...densityPatchCentre());
+  const patchRadius = Math.max(
+    1,
+    ((LAYOUT.density.x1 - LAYOUT.density.x0) * regionW) / (LAYOUT.payload.x1 - LAYOUT.payload.x0) / 3,
+  );
+  const patch = correct(sampleAverage(image, dx, dy, patchRadius));
+  const patchIndex = classify(patch, PALETTE);
+  const marked = DENSITIES.find((d) => densityColourIndex(d) === patchIndex);
+
   const dataRefs = PALETTE.slice(0, 32);
-  for (let row = 0; row < GRID_ROWS; row++) {
-    for (let col = 0; col < GRID_COLS; col++) {
-      const [fx, fy] = cellCentre(col, row);
-      const [x, y] = applyHomography(H, fx, fy);
-      const rgb = correct(sampleAverage(image, x, y, cellRadius));
-      symbols[row * GRID_COLS + col] = classify(rgb, dataRefs);
+  const sample = (spec) => {
+    const cellPx = Math.max(1, Math.min(regionW / spec.cols, regionH / spec.rows));
+    const cellRadius = Math.max(0, cellPx / 2 - 1);
+    const symbols = new Uint8Array(spec.cellCount);
+    for (let row = 0; row < spec.rows; row++) {
+      for (let col = 0; col < spec.cols; col++) {
+        const [fx, fy] = cellCentre(col, row, spec);
+        const [x, y] = applyHomography(H, fx, fy);
+        const rgb = correct(sampleAverage(image, x, y, cellRadius));
+        symbols[row * spec.cols + col] = classify(rgb, dataRefs);
+      }
     }
-  }
-  return { symbols, residual };
+    return symbols;
+  };
+
+  // Densities to try, most likely first: the one the patch claims, then the rest
+  // in case the patch itself was misread.
+  const specs = marked ? [marked, ...DENSITIES.filter((d) => d !== marked)] : [...DENSITIES];
+  return { residual, specs, sample };
 }
 
 /** Four rotations of the quad plus their mirrors (winding is unknown). */
@@ -274,7 +288,7 @@ function orientations(quad) {
  * Decode a captured frame into the raw payload bytes.
  * @param {{data:Uint8ClampedArray,width:number,height:number}} image
  * @param {{quad?: number[][]}} [options] pre-detected marker quad
- * @returns {{payload: Uint8Array, corrected: number, residual: number}}
+ * @returns {{payload: Uint8Array, corrected: number, residual: number, density: string}}
  */
 export function decodeSpectraCode(image, options = {}) {
   const quad = options.quad ?? findMarkers(image);
@@ -287,11 +301,14 @@ export function decodeSpectraCode(image, options = {}) {
 
   let lastError = new Error('unable to sample the code');
   for (const attempt of attempts) {
-    try {
-      const { data, corrected } = rsDecode(symbolsToBytes(attempt.read.symbols));
-      return { payload: data, corrected, residual: attempt.read.residual };
-    } catch (err) {
-      lastError = err;
+    for (const spec of attempt.read.specs) {
+      try {
+        const symbols = attempt.read.sample(spec);
+        const { data, corrected } = rsDecode(symbolsToBytes(symbols, spec));
+        return { payload: data, corrected, residual: attempt.read.residual, density: spec.name };
+      } catch (err) {
+        lastError = err;
+      }
     }
   }
   throw new Error(`SpectraCode unreadable: ${lastError.message}`);
