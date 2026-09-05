@@ -100,3 +100,16 @@ src/
 tools/                build-model.js, serve.js
 tests/                codec + end-to-end optical loopback
 ```
+
+## Licence
+
+BlinkCode AI is source-available under the [BlinkCode AI Personal Use License](LICENSE),
+not an open-source licence:
+
+- **Personal, academic and non-profit use is free**, including modifying and
+  sharing the code.
+- **Attribution is required** — keep the licence file and credit Dr Sohil Momin
+  ([@drsamonline](https://github.com/drsamonline)) with a link back to this
+  repository wherever you credit authors.
+- **Commercial or enterprise use needs written permission** from the author;
+  ask via https://github.com/drsamonline for a commercial licence.

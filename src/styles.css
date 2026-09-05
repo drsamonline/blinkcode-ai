@@ -403,3 +403,14 @@ button.primary,
     margin: 0 auto;
   }
 }
+
+.credit {
+  margin: 28px 0 8px;
+  text-align: center;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.credit a {
+  color: inherit;
+}

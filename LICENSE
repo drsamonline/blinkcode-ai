@@ -1,0 +1,76 @@
+BlinkCode AI Personal Use License
+Version 1.0
+
+Copyright (c) 2026 Dr Sohil Momin (github.com/drsamonline)
+
+BlinkCode AI, including its source code, documentation, models and visual
+design (the "Software"), was created by Dr Sohil Momin (the "Author") and
+remains the Author's work. This licence grants generous rights for personal
+use while reserving all commercial rights to the Author.
+
+1. Grant for personal and non-commercial use
+
+   Subject to the terms below, the Author grants you a worldwide,
+   royalty-free, non-exclusive, non-transferable, revocable licence to use,
+   copy, modify and share the Software for Non-Commercial Purposes.
+
+   "Non-Commercial Purposes" means personal use, private study, academic
+   research, teaching, evaluation, journalism, and use by individuals or
+   registered non-profit organisations, in each case where the use is not
+   primarily intended for or directed toward commercial advantage or
+   monetary compensation.
+
+2. Commercial and enterprise use requires written permission
+
+   Any use of the Software by or for a company, enterprise, government body,
+   or any other organisation acting for commercial advantage — including but
+   not limited to use in a product or service that is sold, licensed, hosted,
+   advertised against, or used internally to support a commercial business —
+   requires the Author's prior written permission and a separate commercial
+   licence.
+
+   Requests for a commercial licence should be sent to the Author via
+   https://github.com/drsamonline.
+
+3. Attribution
+
+   Every copy, fork, modified version, distribution or public deployment of
+   the Software, or of any work substantially derived from it, must:
+
+   a. retain this licence file and the copyright notice above, unmodified; and
+   b. give clear, visible credit to Dr Sohil Momin as the original author of
+      BlinkCode AI, including a link to the original project repository
+      (https://github.com/drsamonline/blinkcode-ai) wherever the software,
+      its user interface, or its documentation credits authors or third-party
+      components.
+
+4. Modifications and redistribution
+
+   You may modify the Software and share your modified version, provided that
+   the modified version is also distributed under this licence, that changes
+   are stated, and that it is not used for purposes excluded by section 2.
+
+5. Restrictions
+
+   You may not remove or obscure the attribution required by section 3,
+   sublicense the Software except as permitted here, or use the Author's name
+   or trademarks to endorse or promote your product without written
+   permission.
+
+6. Termination
+
+   This licence terminates automatically if you breach it. It is reinstated
+   if you cure the breach within 30 days of becoming aware of it, unless the
+   Author has already notified you of the breach in writing.
+
+7. No warranty and no liability
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+   AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Note: this is a source-available licence, not an OSI-approved open-source
+licence, because it restricts commercial use.
