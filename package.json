@@ -2,6 +2,8 @@
   "name": "blinkcode-ai",
   "version": "0.1.0",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Dr Sohil Momin (https://github.com/drsamonline)",
   "type": "module",
   "description": "Single-shot optical file transfer PWA: neural-style compression + SpectraCode colour matrix",
   "scripts": {
