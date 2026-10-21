@@ -300,8 +300,9 @@
   .foot-note{font-size:.78rem;color:#7f86a5;margin-top:1.4rem;max-width:80ch}
 
   /* reveal */
-  .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
-  .reveal.in{opacity:1;transform:none}
+  .reveal{transition:opacity .6s ease,transform .6s ease}
+  html.js .reveal{opacity:0;transform:translateY(18px)}
+  html.js .reveal.in{opacity:1;transform:none}
 
   @media(prefers-reduced-motion:reduce){
     html{scroll-behavior:auto}
@@ -310,6 +311,7 @@
     .card:hover,.btn:hover{transform:none}
   }
 </style>
+<script>document.documentElement.className += ' js';</script>
 </head>
 <body>
 
@@ -744,13 +746,21 @@
 
   /* ---- scroll reveal ---- */
   var items = document.querySelectorAll(".reveal");
+  function revealAll(){ for (var k=0;k<items.length;k++) items[k].classList.add("in"); }
+  function revealInView(){ var vh=window.innerHeight||document.documentElement.clientHeight;
+    for (var m=0;m<items.length;m++){ var r=items[m].getBoundingClientRect(); if(r.top<vh+40&&r.bottom>-40) items[m].classList.add("in"); } }
   if (reduce || !("IntersectionObserver" in window)) {
-    for (var i=0;i<items.length;i++) items[i].classList.add("in");
+    revealAll();
   } else {
     var io = new IntersectionObserver(function(entries){
       entries.forEach(function(e){ if (e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
     }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
     for (var j=0;j<items.length;j++) io.observe(items[j]);
+    setTimeout(revealInView,1000);
+    setTimeout(revealAll,4000);
+    window.addEventListener('scroll',revealInView,{passive:true});
+    window.addEventListener('resize',revealInView,{passive:true});
+    window.addEventListener('load',function(){ setTimeout(revealInView,200); });
   }
 
   /* ---- copy buttons ---- */
