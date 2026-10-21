@@ -22,7 +22,6 @@ pointing a camera at the sender's screen. No server, no network after the first 
 
 ---
 
-# BlinkCode AI
 
 Optical file transfer as an offline-first PWA. A file is compressed into a
 compact "File DNA" container, painted as **SpectraCode colour matrices**, and
