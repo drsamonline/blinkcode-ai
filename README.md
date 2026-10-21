@@ -1,3 +1,27 @@
+<div align="center">
+
+# BlinkCode AI
+
+**Point your camera, get the file.**
+
+Optical file transfer as an offline-first PWA — a file is compressed into a compact
+*File DNA* container, painted as **SpectraCode** colour matrices, and recovered by
+pointing a camera at the sender's screen. No server, no network after the first launch.
+
+[![Licence: source-available](https://img.shields.io/badge/license-source--available-7c3aed
+[![PWA: offline-first](https://img.shields.io/badge/PWA-offline--first-06b6d4
+[![Vanilla JS: no build step](https://img.shields.io/badge/vanilla%20JS-no%20build%20step-7c3aed
+[![Last commit](https://img.shields.io/github/last-commit/drsamonline/blinkcode-ai
+[![Stars](https://img.shields.io/github/stars/drsamonline/blinkcode-ai
+
+**Landing page:** https://drsamonline.github.io/blinkcode-ai/
+&nbsp;·&nbsp;
+**Live demo:** https://drsamonline.github.io/blinkcode-ai/play/
+
+</div>
+
+---
+
 # BlinkCode AI
 
 Optical file transfer as an offline-first PWA. A file is compressed into a
