@@ -7,6 +7,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Perceptual-mode quality**: bicubic (Catmull-Rom) reconstruction upscale in
+  place of bilinear. Measured with `npm run perceptual`: a smooth gradient went
+  from 12.97 to 3.88 RMSE (+10 dB), a photo-like image from 8.72 to 7.71.
+  `tools/perceptual.js` and `tools/update-scales.js` added.
 - **Optical robustness**: median per-cell sampling (robust to edge bleed and
   glare), a luminance contrast stretch before binarisation, a contrast-based
   bullseye test instead of an absolute threshold, and a wider multi-threshold
@@ -34,6 +38,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 - The arithmetic coder's frequency counts are now `Uint32Array` so a
   match-model boost cannot overflow a count.
+- Tried raising the luma plane from 32x32 to 64x64 (48 coefficients); it measured
+  *worse* (gradient RMSE 6.69 vs 3.88) with the retuned scales, so it was reverted.
+  A 64-value latent is the binding constraint, not the plane size.
 - Relicensed future versions under the dual model; copies already distributed
   under the previous "Personal Use License" keep that grant.
 - A multi-frame test now uses incompressible data, because better compression had

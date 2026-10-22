@@ -22,6 +22,7 @@
     "bench": "node tools/bench.js",
     "tune": "node tools/tune.js",
     "robustness": "node tools/robustness.js",
+    "perceptual": "node tools/perceptual.js",
     "lint": "eslint ."
   },
   "devDependencies": {

@@ -175,7 +175,7 @@ test('perceptual image mode fits a photo into a few hundred bytes', () => {
     }
   }
   const rmse = Math.sqrt(error / (w * h * 3));
-  assert.ok(rmse < 25, `perceptual reconstruction too poor: rmse ${rmse}`);
+  assert.ok(rmse < 12, `perceptual reconstruction too poor: rmse ${rmse}`);
   assert.ok(stats.originalBytes / stats.containerBytes > 1000, 'ratio claim');
 });
 

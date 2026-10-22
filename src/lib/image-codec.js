@@ -133,30 +133,65 @@ function downsamplePlane(plane, from, to) {
   return out;
 }
 
-function upsamplePlane(plane, from, to) {
-  const out = new Float64Array(to * to);
-  for (let y = 0; y < to; y++) {
-    const sy = Math.min(from - 1, (y * from) / to);
-    const y0 = Math.floor(sy);
-    const y1 = Math.min(from - 1, y0 + 1);
-    const fy = sy - y0;
-    for (let x = 0; x < to; x++) {
-      const sx = Math.min(from - 1, (x * from) / to);
+const clampIndex = (i, n) => (i < 0 ? 0 : i >= n ? n - 1 : i);
+
+/** Catmull-Rom cubic interpolation between four samples. */
+function cubic(p0, p1, p2, p3, t) {
+  const a0 = -0.5 * p0 + 1.5 * p1 - 1.5 * p2 + 0.5 * p3;
+  const a1 = p0 - 2.5 * p1 + 2 * p2 - 0.5 * p3;
+  const a2 = -0.5 * p0 + 0.5 * p2;
+  return ((a0 * t + a1) * t + a2) * t + p1;
+}
+
+/**
+ * Separable bicubic plane resize. Smoother than bilinear, which matters because
+ * the latent is a coarse 32x32 (or 64x64) luma plane blown up to the display
+ * size — bilinear leaves visible faceting on smooth gradients.
+ */
+function resizePlane(src, sw, sh, dw, dh) {
+  const tmp = new Float64Array(dw * sh);
+  for (let y = 0; y < sh; y++) {
+    for (let x = 0; x < dw; x++) {
+      const sx = (x + 0.5) * (sw / dw) - 0.5;
       const x0 = Math.floor(sx);
-      const x1 = Math.min(from - 1, x0 + 1);
       const fx = sx - x0;
-      const top = plane[y0 * from + x0] * (1 - fx) + plane[y0 * from + x1] * fx;
-      const bottom = plane[y1 * from + x0] * (1 - fx) + plane[y1 * from + x1] * fx;
-      out[y * to + x] = top * (1 - fy) + bottom * fy;
+      const row = y * sw;
+      tmp[y * dw + x] = cubic(
+        src[row + clampIndex(x0 - 1, sw)],
+        src[row + clampIndex(x0, sw)],
+        src[row + clampIndex(x0 + 1, sw)],
+        src[row + clampIndex(x0 + 2, sw)],
+        fx,
+      );
+    }
+  }
+  const out = new Float64Array(dw * dh);
+  for (let y = 0; y < dh; y++) {
+    const sy = (y + 0.5) * (sh / dh) - 0.5;
+    const y0 = Math.floor(sy);
+    const fy = sy - y0;
+    const r0 = clampIndex(y0 - 1, sh) * dw;
+    const r1 = clampIndex(y0, sh) * dw;
+    const r2 = clampIndex(y0 + 1, sh) * dw;
+    const r3 = clampIndex(y0 + 2, sh) * dw;
+    for (let x = 0; x < dw; x++) {
+      out[y * dw + x] = cubic(tmp[r0 + x], tmp[r1 + x], tmp[r2 + x], tmp[r3 + x], fy);
     }
   }
   return out;
 }
 
+function upsamplePlane(plane, from, to) {
+  return resizePlane(plane, from, from, to, to);
+}
+
 /** Default quantiser scales; the model bundle can override them. */
 export function defaultLatentScales() {
   const scales = new Float32Array(LATENT_SIZE);
-  for (let i = 0; i < LUMA_COEFFS; i++) scales[i] = i === 0 ? 8 : 4 + i * 0.6;
+  // Orthonormal DCT coefficients grow with the plane size, so the luma scales
+  // track LUMA_N; the chroma planes stay at CHROMA_N.
+  const lumaGain = LUMA_N / 32;
+  for (let i = 0; i < LUMA_COEFFS; i++) scales[i] = (i === 0 ? 8 : 4 + i * 0.6) * lumaGain;
   for (let i = LUMA_COEFFS; i < LATENT_SIZE; i++) {
     const k = (i - LUMA_COEFFS) % CHROMA_COEFFS;
     scales[i] = k === 0 ? 4 : 3 + k * 0.5;
@@ -239,28 +274,13 @@ export function decodeImageLatent(bytes, scales = defaultLatentScales()) {
     small[i * 4 + 3] = 255;
   }
 
-  // Bilinear upscale back to the original dimensions.
+  // Bicubic upscale back to the original dimensions.
   const out = new Uint8ClampedArray(width * height * 4);
   for (let ch = 0; ch < 3; ch++) {
     const plane = new Float64Array(LUMA_N * LUMA_N);
     for (let i = 0; i < plane.length; i++) plane[i] = small[i * 4 + ch];
-    const scaledW = new Float64Array(width * height);
-    for (let ty = 0; ty < height; ty++) {
-      const sy = Math.min(LUMA_N - 1, (ty * LUMA_N) / height);
-      const y0 = Math.floor(sy);
-      const y1 = Math.min(LUMA_N - 1, y0 + 1);
-      const fy = sy - y0;
-      for (let tx = 0; tx < width; tx++) {
-        const sx = Math.min(LUMA_N - 1, (tx * LUMA_N) / width);
-        const x0 = Math.floor(sx);
-        const x1 = Math.min(LUMA_N - 1, x0 + 1);
-        const fx = sx - x0;
-        const top = plane[y0 * LUMA_N + x0] * (1 - fx) + plane[y0 * LUMA_N + x1] * fx;
-        const bot = plane[y1 * LUMA_N + x0] * (1 - fx) + plane[y1 * LUMA_N + x1] * fx;
-        scaledW[ty * width + tx] = top * (1 - fy) + bot * fy;
-      }
-    }
-    for (let i = 0; i < width * height; i++) out[i * 4 + ch] = scaledW[i];
+    const scaled = resizePlane(plane, LUMA_N, LUMA_N, width, height);
+    for (let i = 0; i < width * height; i++) out[i * 4 + ch] = scaled[i];
   }
   for (let i = 0; i < width * height; i++) out[i * 4 + 3] = 255;
   return { data: out, width, height };

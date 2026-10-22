@@ -92,6 +92,22 @@ The decoder samples each cell with a **median** (robust to edge bleed and glare)
 stretches the capture's contrast before binarising, and tries several thresholds
 when locating the bullseye markers.
 
+## Perceptual mode
+
+The lossy image mode quantises a photo into a 64-value latent. `npm run
+perceptual` measures reconstruction error:
+
+| image | RMSE | PSNR |
+| --- | ---: | ---: |
+| smooth gradient | 3.9 | 36.3 dB |
+| photo-like | 7.7 | 30.4 dB |
+| 2-pixel stripes | 57.5 | 12.9 dB |
+
+The last row is the honest limit: a 64-value latent cannot represent
+near-Nyquist detail, and no reconstruction trick brings it back. Reconstruction
+now uses a **bicubic** upscale — bilinear left visible faceting on gradients and
+cost about 9 dB there.
+
 ## Honest limits
 
 These matter more than the pitch, so they are stated plainly here and in the
@@ -154,7 +170,7 @@ src/
     surface.js        canvas / buffer drawing targets
   workers/            model loader, compression, decompression, optical decode
   models/ucg-v1.bin   downloadable model bundle
-tools/                build.js, build-model.js, bench.js, tune.js, robustness.js, serve.js
+tools/                build.js, build-model.js, bench.js, tune.js, robustness.js, perceptual.js, update-scales.js, serve.js
 tests/                codec, stream, predict + end-to-end optical loopback
 docs/                 landing page + built demo (GitHub Pages)
 ```
