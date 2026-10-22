@@ -22,7 +22,7 @@ function render(container, size = 1400) {
 }
 
 /** Simulate a phone camera: perspective tilt, colour cast and vignetting. */
-function photograph(image, { tilt = 0.06, cast = [1.06, 0.97, 0.9], gain = 0.9 } = {}) {
+function photograph(image, { tilt = 0.06, cast = [1.06, 0.97, 0.9], gain = 0.9, blur = 0, noise = 0, seed = 1 } = {}) {
   const { width: w, height: h } = image;
   const out = {
     data: new Uint8ClampedArray(w * h * 4),
@@ -42,6 +42,33 @@ function photograph(image, { tilt = 0.06, cast = [1.06, 0.97, 0.9], gain = 0.9 }
     [w * tilt * 0.5, h * (1 - tilt)],
   ];
   const inverse = homography(dst, src);
+  let s = seed >>> 0;
+  const rnd = () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+  const sampleBlurred = (sx, sy) => {
+    if (blur <= 0) {
+      const i = ((sy | 0) * w + (sx | 0)) * 4;
+      return [image.data[i], image.data[i + 1], image.data[i + 2]];
+    }
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    let n = 0;
+    for (let ky = -blur; ky <= blur; ky++) {
+      for (let kx = -blur; kx <= blur; kx++) {
+        const px = Math.min(w - 1, Math.max(0, (sx | 0) + kx));
+        const py = Math.min(h - 1, Math.max(0, (sy | 0) + ky));
+        const i = (py * w + px) * 4;
+        r += image.data[i];
+        g += image.data[i + 1];
+        b += image.data[i + 2];
+        n++;
+      }
+    }
+    return [r / n, g / n, b / n];
+  };
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const [sx, sy] = applyHomography(inverse, x + 0.5, y + 0.5);
@@ -51,13 +78,16 @@ function photograph(image, { tilt = 0.06, cast = [1.06, 0.97, 0.9], gain = 0.9 }
         out.data[o + 3] = 255;
         continue;
       }
-      const i = ((sy | 0) * w + (sx | 0)) * 4;
+      const [sr, sg, sb] = sampleBlurred(sx, sy);
+      const base = [sr, sg, sb];
       // Radial falloff mimics uneven lighting.
       const dx = (x / w - 0.5) * 2;
       const dy = (y / h - 0.5) * 2;
       const vignette = 1 - 0.18 * (dx * dx + dy * dy);
       for (let c = 0; c < 3; c++) {
-        out.data[o + c] = image.data[i + c] * cast[c] * gain * vignette + 8;
+        let v = base[c] * cast[c] * gain * vignette + 8;
+        if (noise) v += (rnd() * 2 - 1) * noise;
+        out.data[o + c] = v;
       }
       out.data[o + 3] = 255;
     }
@@ -91,6 +121,23 @@ test('decodes a simulated camera photo with tilt, colour cast and vignetting', (
   const photo = photograph(render(container, 1600));
   const { payload, residual } = decodeSpectraCode(photo);
   assert.ok(residual < 60, `colour residual too high: ${residual}`);
+  assert.deepEqual(decodeFileDna(payload, model).bytes, bytes);
+});
+
+test('decodes a blurred, noisy, low-contrast capture', () => {
+  const bytes = crypto.getRandomValues(new Uint8Array(600));
+  const { container } = encodeFileDna(
+    { name: 'hard.bin', mode: MODE.LOSSLESS, bytes },
+    model,
+  );
+  const photo = photograph(render(container, 1600), {
+    tilt: 0.09,
+    blur: 1,
+    noise: 14,
+    gain: 0.72,
+    cast: [1.12, 0.95, 0.85],
+  });
+  const { payload } = decodeSpectraCode(photo);
   assert.deepEqual(decodeFileDna(payload, model).bytes, bytes);
 });
 
@@ -128,7 +175,7 @@ test('perceptual image mode fits a photo into a few hundred bytes', () => {
     }
   }
   const rmse = Math.sqrt(error / (w * h * 3));
-  assert.ok(rmse < 25, `perceptual reconstruction too poor: rmse ${rmse}`);
+  assert.ok(rmse < 12, `perceptual reconstruction too poor: rmse ${rmse}`);
   assert.ok(stats.originalBytes / stats.containerBytes > 1000, 'ratio claim');
 });
 

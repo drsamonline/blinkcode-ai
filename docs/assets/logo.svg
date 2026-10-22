@@ -1,19 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="BlinkCode AI logo">
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
   <defs>
-    <linearGradient id="lg" x1="0" y1="0" x2="512" y2="512">
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#7c3aed"/>
       <stop offset="1" stop-color="#06b6d4"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="112" fill="#07080d"/>
-  <rect x="72" y="136" width="368" height="240" rx="60" fill="none" stroke="url(#lg)" stroke-width="26"/>
-  <circle cx="256" cy="256" r="76" fill="none" stroke="url(#lg)" stroke-width="26"/>
-  <circle cx="256" cy="256" r="26" fill="url(#lg)"/>
-  <path d="M160 136v-40M352 136v-40" stroke="url(#lg)" stroke-width="26" stroke-linecap="round"/>
-  <g opacity="0.9">
-    <rect x="196" y="228" width="20" height="20" rx="3" fill="#a78bfa"/>
-    <rect x="296" y="228" width="20" height="20" rx="3" fill="#67e8f9"/>
-    <rect x="196" y="264" width="20" height="20" rx="3" fill="#67e8f9"/>
-    <rect x="296" y="264" width="20" height="20" rx="3" fill="#a78bfa"/>
+  <rect width="192" height="192" rx="40" fill="#0b1020"/>
+  <g>
+    <rect x="30" y="30" width="30" height="30" rx="5" fill="#7c3aed"/>
+    <rect x="66" y="30" width="30" height="30" rx="5" fill="#06b6d4"/>
+    <rect x="102" y="30" width="30" height="30" rx="5" fill="#f59e0b"/>
+    <rect x="138" y="30" width="24" height="30" rx="5" fill="#22c55e"/>
+    <rect x="30" y="66" width="30" height="30" rx="5" fill="#ef4444"/>
+    <rect x="66" y="66" width="30" height="30" rx="5" fill="#6366f1"/>
+    <rect x="102" y="66" width="30" height="30" rx="5" fill="#14b8a6"/>
+    <rect x="138" y="66" width="24" height="30" rx="5" fill="#e879f9"/>
+    <rect x="30" y="102" width="30" height="30" rx="5" fill="#facc15"/>
+    <rect x="66" y="102" width="30" height="30" rx="5" fill="#22c55e"/>
+    <rect x="102" y="102" width="30" height="30" rx="5" fill="#3b82f6"/>
+    <rect x="138" y="102" width="24" height="30" rx="5" fill="#f97316"/>
+    <rect x="30" y="138" width="30" height="24" rx="5" fill="#06b6d4"/>
+    <rect x="66" y="138" width="30" height="24" rx="5" fill="#a78bfa"/>
+    <rect x="102" y="138" width="30" height="24" rx="5" fill="#fb7185"/>
+    <rect x="138" y="138" width="24" height="24" rx="5" fill="#4ade80"/>
   </g>
+  <rect x="14" y="14" width="164" height="164" rx="30" fill="none" stroke="url(#bg)" stroke-width="4"/>
 </svg>

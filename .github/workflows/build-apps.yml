@@ -1,14 +1,14 @@
 name: Build portable EXE + Android APK
 
-# Drop this file into a consuming app repo as
-# .github/workflows/build-apps.yml (pilot: boericke-repertory).
-#
-# APP_NAME  -> asset names: <APP_NAME>-portable.exe and <APP_NAME>.apk
-# APP_SRC   -> folder in the app repo that holds index.html (+ any assets)
+# Turns the app (docs/play) into a portable Windows EXE and an Android APK using
+# the shared drsamonline/app-builder kit, and publishes both on the fixed
+# `app-latest` release so the download URLs never change:
+#   https://github.com/drsamonline/blinkcode-ai/releases/latest/download/blinkcode-ai-portable.exe
+#   https://github.com/drsamonline/blinkcode-ai/releases/latest/download/blinkcode-ai.apk
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -34,6 +34,19 @@ jobs:
         with:
           repository: ${{ env.KIT_REPO }}
           path: builder
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app-repo/package-lock.json
+
+      - name: Stage the web app
+        working-directory: app-repo
+        run: |
+          npm ci
+          npm run build
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -81,6 +94,19 @@ jobs:
         with:
           repository: ${{ env.KIT_REPO }}
           path: builder
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app-repo/package-lock.json
+
+      - name: Stage the web app
+        working-directory: app-repo
+        run: |
+          npm ci
+          npm run build
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4

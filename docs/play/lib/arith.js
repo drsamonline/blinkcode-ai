@@ -6,7 +6,7 @@
 // next-byte predictor (same `freqs(ctx)` / `update(ctx, sym)` interface) turns
 // this into the real Universal Compression Graph without touching the coder.
 
-const ALPHABET = 257; // 0..255 plus an end-of-stream symbol
+export const ALPHABET = 257; // 0..255 plus an end-of-stream symbol
 export const EOS = 256;
 
 const TOP = 0x100000000;
@@ -20,7 +20,8 @@ export class Order1Model {
    * @param {Uint16Array|null} priors 256*257 static counts (context, symbol).
    */
   constructor(priors = null) {
-    this.counts = new Uint16Array(256 * ALPHABET);
+    // Uint32 so a match-model boost can be added without overflowing a count.
+    this.counts = new Uint32Array(256 * ALPHABET);
     this.totals = new Uint32Array(256);
     if (priors && priors.length === 256 * ALPHABET) {
       this.counts.set(priors);

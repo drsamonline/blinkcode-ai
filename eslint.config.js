@@ -1,4 +1,5 @@
 export default [
+  { ignores: ['docs/**', 'node_modules/**'] },
   {
     files: ['**/*.js'],
     languageOptions: {

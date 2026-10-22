@@ -1,76 +1,114 @@
-BlinkCode AI Personal Use License
-Version 1.0
+# PolyForm Noncommercial License 1.0.0
 
-Copyright (c) 2026 Dr Sohil Momin (github.com/drsamonline)
+https://polyformproject.org/licenses/noncommercial/1.0.0
 
-BlinkCode AI, including its source code, documentation, models and visual
-design (the "Software"), was created by Dr Sohil Momin (the "Author") and
-remains the Author's work. This licence grants generous rights for personal
-use while reserving all commercial rights to the Author.
+Required Notice: Copyright (c) 2026 Dr Sohil Momin (https://github.com/drsamonline)
 
-1. Grant for personal and non-commercial use
+## Acceptance
 
-   Subject to the terms below, the Author grants you a worldwide,
-   royalty-free, non-exclusive, non-transferable, revocable licence to use,
-   copy, modify and share the Software for Non-Commercial Purposes.
+In order to get any license under these terms, you must agree to them as both
+strict obligations and conditions to all your licenses.
 
-   "Non-Commercial Purposes" means personal use, private study, academic
-   research, teaching, evaluation, journalism, and use by individuals or
-   registered non-profit organisations, in each case where the use is not
-   primarily intended for or directed toward commercial advantage or
-   monetary compensation.
+## Copyright License
 
-2. Commercial and enterprise use requires written permission
+The licensor grants you a copyright license for the software to do everything
+you might do with the software that would otherwise infringe the licensor's
+copyright in it for any permitted purpose. However, you may only distribute the
+software according to Distribution License and make changes or new works based
+on the software according to Changes and New Works License.
 
-   Any use of the Software by or for a company, enterprise, government body,
-   or any other organisation acting for commercial advantage — including but
-   not limited to use in a product or service that is sold, licensed, hosted,
-   advertised against, or used internally to support a commercial business —
-   requires the Author's prior written permission and a separate commercial
-   licence.
+## Distribution License
 
-   Requests for a commercial licence should be sent to the Author via
-   https://github.com/drsamonline.
+The licensor grants you an additional copyright license to distribute copies of
+the software. Your license to distribute covers distributing the software with
+changes and new works permitted by Changes and New Works License.
 
-3. Attribution
+## Notices
 
-   Every copy, fork, modified version, distribution or public deployment of
-   the Software, or of any work substantially derived from it, must:
+You must ensure that anyone who gets a copy of any part of the software from you
+also gets a copy of these terms or the URL for them above, as well as copies of
+any plain-text lines beginning with `Required Notice:` that the licensor provided
+with the software. For example:
 
-   a. retain this licence file and the copyright notice above, unmodified; and
-   b. give clear, visible credit to Dr Sohil Momin as the original author of
-      BlinkCode AI, including a link to the original project repository
-      (https://github.com/drsamonline/blinkcode-ai) wherever the software,
-      its user interface, or its documentation credits authors or third-party
-      components.
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
 
-4. Modifications and redistribution
+## Changes and New Works License
 
-   You may modify the Software and share your modified version, provided that
-   the modified version is also distributed under this licence, that changes
-   are stated, and that it is not used for purposes excluded by section 2.
+The licensor grants you an additional copyright license to make changes and new
+works based on the software for any permitted purpose.
 
-5. Restrictions
+## Patent License
 
-   You may not remove or obscure the attribution required by section 3,
-   sublicense the Software except as permitted here, or use the Author's name
-   or trademarks to endorse or promote your product without written
-   permission.
+The licensor grants you a patent license for the software that covers patent
+claims the licensor can license, or becomes able to license, that you would
+infringe by using the software.
 
-6. Termination
+## Noncommercial Purposes
 
-   This licence terminates automatically if you breach it. It is reinstated
-   if you cure the breach within 30 days of becoming aware of it, unless the
-   Author has already notified you of the breach in writing.
+Any noncommercial purpose is a permitted purpose.
 
-7. No warranty and no liability
+## Personal Uses
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-   THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
-   AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Personal use for research, experiment, and testing for the benefit of public
+knowledge, personal study, private entertainment, hobby projects, amateur
+pursuits, or religious observance, without any anticipated commercial
+application, is use for a permitted purpose.
 
-Note: this is a source-available licence, not an OSI-approved open-source
-licence, because it restricts commercial use.
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution, public research
+organization, public safety or health organization, environmental protection
+organization, or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting from the funding.
+
+## Fair Use
+
+You may have "fair use" rights for the software under the law. These terms do
+not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of your licenses to
+anyone else, or prevent the licensor from granting licenses to anyone else.
+These terms do not imply any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or contributes to
+infringement of any patent, your patent license for the software granted under
+these terms ends immediately. If your company makes such a claim, your patent
+license ends immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have violated any of these
+terms, or done anything with the software not covered by your licenses, your
+licenses can nonetheless continue if you come into full compliance with these
+terms, and take practical steps to correct past violations, within 32 days of
+receiving notice. Otherwise, all your licenses end immediately.
+
+## No Liability
+
+As far as the law allows, the software comes as is, without any warranty or
+condition, and the licensor will not be liable to you for any damages arising out
+of these terms or the use or nature of the software, under any kind of legal
+claim.
+
+## Definitions
+
+The licensor is the individual or entity offering these terms, and the software
+is the software the licensor makes available under these terms.
+
+You refers to the individual or entity agreeing to these terms.
+
+Your company is any legal entity, sole proprietorship, or other kind of
+organization that you work for, plus all organizations that have control over,
+are under the control of, or are under common control with that organization.
+Control means ownership of substantially all the assets of an entity, or the
+power to direct its management and policies by vote, contract, or otherwise.
+Control can be direct or indirect.
+
+Your licenses are all the licenses granted to you for the software under these
+terms.
+
+Use means anything you do with the software requiring one of your licenses.

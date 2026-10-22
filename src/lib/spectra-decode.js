@@ -58,6 +58,42 @@ function toGray(image) {
   return gray;
 }
 
+/**
+ * Linear contrast stretch on the 2nd..98th luminance percentiles. A dim capture
+ * (low gain, poor light) otherwise lands entirely in the bottom of the range and
+ * binarises badly, which is why marker detection used to be gain-sensitive.
+ */
+function stretchContrast(gray) {
+  const hist = new Uint32Array(256);
+  for (let i = 0; i < gray.length; i++) hist[gray[i]]++;
+  const total = gray.length;
+  let acc = 0;
+  let lo = 0;
+  let hi = 255;
+  for (let v = 0; v < 256; v++) {
+    acc += hist[v];
+    if (acc >= total * 0.02) {
+      lo = v;
+      break;
+    }
+  }
+  acc = 0;
+  for (let v = 0; v < 256; v++) {
+    acc += hist[v];
+    if (acc >= total * 0.98) {
+      hi = v;
+      break;
+    }
+  }
+  if (hi - lo < 8) return gray;
+  const out = new Uint8Array(gray.length);
+  const scale = 255 / (hi - lo);
+  for (let i = 0; i < gray.length; i++) {
+    out[i] = Math.max(0, Math.min(255, Math.round((gray[i] - lo) * scale)));
+  }
+  return out;
+}
+
 /** Dark connected components (8-connectivity) with basic shape statistics. */
 function components(gray, width, height, threshold, maxArea) {
   const labels = new Int32Array(width * height).fill(-1);
@@ -111,29 +147,35 @@ function components(gray, width, height, threshold, maxArea) {
   return found;
 }
 
+/** Mean luminance on a ring at `factor` × r around (cx, cy), or null if off-image. */
+function ringMean(gray, width, height, cx, cy, r, factor) {
+  let sum = 0;
+  let n = 0;
+  for (let a = 0; a < 16; a++) {
+    const ang = (a / 16) * Math.PI * 2;
+    const x = Math.round(cx + Math.cos(ang) * r * factor);
+    const y = Math.round(cy + Math.sin(ang) * r * factor);
+    if (x < 0 || y < 0 || x >= width || y >= height) return null;
+    sum += gray[y * width + x];
+    n++;
+  }
+  return n ? sum / n : null;
+}
+
 /**
- * A bullseye is a solid black disc (radius r) inside a white ring inside a
- * black ring. Probe those three radii to reject payload cells and noise.
+ * A bullseye is a solid black disc (radius r) inside a white ring inside a black
+ * ring. Compare the mean luminance at those radii by *contrast* rather than
+ * against an absolute threshold — an absolute cut is defeated by blur (which
+ * averages the rings together) and by a dim capture.
  */
-function looksLikeBullseye(gray, width, height, blob, threshold) {
+function looksLikeBullseye(gray, width, height, blob) {
   const r = Math.sqrt(blob.area / Math.PI);
-  const probe = (factor) => {
-    let dark = 0;
-    let n = 0;
-    for (let a = 0; a < 12; a++) {
-      const ang = (a / 12) * Math.PI * 2;
-      const x = Math.round(blob.cx + Math.cos(ang) * r * factor);
-      const y = Math.round(blob.cy + Math.sin(ang) * r * factor);
-      if (x < 0 || y < 0 || x >= width || y >= height) return null;
-      n++;
-      if (gray[y * width + x] <= threshold) dark++;
-    }
-    return dark / n;
-  };
-  const white = probe(1.5);
-  const black = probe(2.6);
-  if (white === null || black === null) return false;
-  return white < 0.25 && black > 0.75;
+  const centre = ringMean(gray, width, height, blob.cx, blob.cy, r, 0);
+  const ring = ringMean(gray, width, height, blob.cx, blob.cy, r, 1.5);
+  const outer = ringMean(gray, width, height, blob.cx, blob.cy, r, 2.6);
+  if (centre === null || ring === null || outer === null) return false;
+  const margin = 18;
+  return ring - centre > margin && ring - outer > margin;
 }
 
 function orderQuad(points) {
@@ -144,11 +186,8 @@ function orderQuad(points) {
   );
 }
 
-/** Locate the four bullseye centres, clockwise starting anywhere. */
-export function findMarkers(image) {
-  const { width, height } = image;
-  const gray = toGray(image);
-  const threshold = Math.max(40, Math.min(200, otsu(gray)));
+/** Bullseye candidates at one binarisation threshold; the corner quad or null. */
+function markersAt(gray, width, height, threshold) {
   const blobs = components(gray, width, height, threshold, (width * height) / 25);
   const minArea = Math.max(4, (width * height) / 200000);
   const candidates = blobs
@@ -159,7 +198,7 @@ export function findMarkers(image) {
       const fill = b.area / (b.w * b.h);
       return fill > 0.55 && fill < 0.95;
     })
-    .filter((b) => looksLikeBullseye(gray, width, height, b, threshold));
+    .filter((b) => looksLikeBullseye(gray, width, height, b));
   if (candidates.length < 4) return null;
 
   // Keep the four most extreme candidates: the code's corners.
@@ -176,26 +215,55 @@ export function findMarkers(image) {
   return orderQuad(corners);
 }
 
-function sampleAverage(image, x, y, radius) {
+/**
+ * Locate the four bullseye centres, clockwise starting anywhere. Tries a few
+ * binarisation thresholds, because a single Otsu estimate is fragile under dim,
+ * low-contrast or unevenly lit conditions.
+ */
+export function findMarkers(image) {
+  const { width, height } = image;
+  const gray = stretchContrast(toGray(image));
+  const base = Math.max(40, Math.min(200, otsu(gray)));
+  for (const threshold of [base, base - 16, base + 16, base - 32, base + 32, base - 48, base + 48, base - 64, base + 64]) {
+    if (threshold <= 8 || threshold >= 248) continue;
+    const quad = markersAt(gray, width, height, threshold);
+    if (quad) return quad;
+  }
+  return null;
+}
+
+function median(values) {
+  values.sort((a, b) => a - b);
+  const mid = values.length >> 1;
+  return values.length % 2 ? values[mid] : (values[mid - 1] + values[mid]) / 2;
+}
+
+/**
+ * Median colour over a small patch centred on (x, y). Median rather than mean:
+ * a cell that straddles an edge, or a specular highlight, drags a mean toward
+ * the neighbour but barely moves a median.
+ */
+function sampleColour(image, x, y, radius) {
   const { data, width, height } = image;
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  let n = 0;
   const x0 = Math.max(0, Math.round(x - radius));
   const x1 = Math.min(width - 1, Math.round(x + radius));
   const y0 = Math.max(0, Math.round(y - radius));
   const y1 = Math.min(height - 1, Math.round(y + radius));
-  for (let py = y0; py <= y1; py++) {
-    for (let px = x0; px <= x1; px++) {
+  const stepX = Math.max(1, Math.floor((x1 - x0 + 1) / 5));
+  const stepY = Math.max(1, Math.floor((y1 - y0 + 1) / 5));
+  const rs = [];
+  const gs = [];
+  const bs = [];
+  for (let py = y0; py <= y1; py += stepY) {
+    for (let px = x0; px <= x1; px += stepX) {
       const i = (py * width + px) * 4;
-      r += data[i];
-      g += data[i + 1];
-      b += data[i + 2];
-      n++;
+      rs.push(data[i]);
+      gs.push(data[i + 1]);
+      bs.push(data[i + 2]);
     }
   }
-  return n ? [r / n, g / n, b / n] : [0, 0, 0];
+  if (rs.length === 0) return [0, 0, 0];
+  return [median(rs), median(gs), median(bs)];
 }
 
 function classify(rgb, references) {
@@ -232,7 +300,7 @@ function readWithQuad(image, quad) {
   for (let i = 0; i < PALETTE.length; i++) {
     const [fx, fy] = calibrationPatchCentre(i);
     const [x, y] = applyHomography(H, fx, fy);
-    measured.push(sampleAverage(image, x, y, Math.max(1, regionW / SPEC.cols)));
+    measured.push(sampleColour(image, x, y, Math.max(1, regionW / SPEC.cols)));
   }
   const correct = fitColourCorrection(measured, PALETTE);
   let residual = 0;
@@ -250,7 +318,7 @@ function readWithQuad(image, quad) {
     1,
     ((LAYOUT.density.x1 - LAYOUT.density.x0) * regionW) / (LAYOUT.payload.x1 - LAYOUT.payload.x0) / 3,
   );
-  const patch = correct(sampleAverage(image, dx, dy, patchRadius));
+  const patch = correct(sampleColour(image, dx, dy, patchRadius));
   const patchIndex = classify(patch, PALETTE);
   const marked = DENSITIES.find((d) => densityColourIndex(d) === patchIndex);
 
@@ -263,7 +331,7 @@ function readWithQuad(image, quad) {
       for (let col = 0; col < spec.cols; col++) {
         const [fx, fy] = cellCentre(col, row, spec);
         const [x, y] = applyHomography(H, fx, fy);
-        const rgb = correct(sampleAverage(image, x, y, cellRadius));
+        const rgb = correct(sampleColour(image, x, y, cellRadius));
         symbols[row * spec.cols + col] = classify(rgb, dataRefs);
       }
     }

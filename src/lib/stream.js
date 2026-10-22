@@ -143,3 +143,135 @@ export class FrameCollector {
     return out;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Rateless (fountain) framing
+//
+// The numbered frames above need every index. These carry fountain symbols
+// instead: the sender emits an endless stream and the receiver finishes from any
+// k + overhead symbols, so a missed frame costs one more symbol, not a loop.
+//
+//   magic 0xB2 | version | transferId u16 | k u16 | blockSize u16
+//   | totalLen u32 | crc32 u32 | symbolId u32      (20 bytes)  + symbol
+
+import { blockCount, splitBlocks, encodeSymbol, LTDecoder } from './fountain.js';
+
+export const FOUNTAIN_MAGIC = 0xb2;
+export const FOUNTAIN_VERSION = 1;
+export const FOUNTAIN_HEADER = 20;
+
+/** Symbol bytes that fit one SpectraCode frame at this density. */
+export const symbolBytes = (spec) => spec.payloadCapacity - FOUNTAIN_HEADER;
+
+/** Pack one fountain symbol into a frame. */
+export function packFountainFrame({ transferId, k, blockSize, totalLen, checksum, symbolId, data }) {
+  const out = new Uint8Array(FOUNTAIN_HEADER + data.length);
+  const view = new DataView(out.buffer);
+  out[0] = FOUNTAIN_MAGIC;
+  out[1] = FOUNTAIN_VERSION;
+  view.setUint16(2, transferId & 0xffff, false);
+  view.setUint16(4, k, false);
+  view.setUint16(6, blockSize, false);
+  view.setUint32(8, totalLen, false);
+  view.setUint32(12, checksum, false);
+  view.setUint32(16, symbolId, false);
+  out.set(data, FOUNTAIN_HEADER);
+  return out;
+}
+
+/** Parse a decoded QR payload back into a fountain frame. */
+export function parseFountainFrame(bytes) {
+  if (bytes.length < FOUNTAIN_HEADER) throw new Error('frame truncated');
+  if (bytes[0] !== FOUNTAIN_MAGIC) throw new Error('not a fountain frame');
+  if (bytes[1] !== FOUNTAIN_VERSION) throw new Error(`unsupported frame version ${bytes[1]}`);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const k = view.getUint16(4, false);
+  const blockSize = view.getUint16(6, false);
+  if (k === 0 || blockSize === 0) throw new Error('frame has an empty grid');
+  return {
+    transferId: view.getUint16(2, false),
+    k,
+    blockSize,
+    totalLen: view.getUint32(8, false),
+    checksum: view.getUint32(12, false),
+    symbolId: view.getUint32(16, false),
+    data: bytes.slice(FOUNTAIN_HEADER, FOUNTAIN_HEADER + blockSize),
+  };
+}
+
+/**
+ * Rateless collector: absorbs fountain symbols from any SpectraCode frame until
+ * the container is rebuilt, then verifies CRC-32.
+ */
+export class FountainCollector {
+  constructor() {
+    this.reset();
+  }
+
+  reset() {
+    this.transferId = null;
+    this.decoder = null;
+    this.checksum = 0;
+    this.symbols = 0;
+  }
+
+  get count() {
+    return this.decoder ? this.decoder.k : 0;
+  }
+
+  get received() {
+    return this.decoder ? this.decoder.resolved : 0;
+  }
+
+  get complete() {
+    return this.decoder ? this.decoder.complete : false;
+  }
+
+  get progress() {
+    return this.decoder ? this.decoder.progress : 0;
+  }
+
+  /** Absorb one decoded frame. */
+  add(frame) {
+    if (
+      !this.decoder ||
+      this.transferId !== frame.transferId ||
+      this.decoder.k !== frame.k ||
+      this.decoder.blockSize !== frame.blockSize ||
+      this.decoder.length !== frame.totalLen
+    ) {
+      this.transferId = frame.transferId;
+      this.decoder = new LTDecoder(frame.k, frame.blockSize, frame.totalLen);
+      this.checksum = frame.checksum;
+      this.symbols = 0;
+      this.decoder.addSymbol(frame.symbolId, frame.data);
+      this.symbols++;
+      return { fresh: true, restarted: true };
+    }
+    const fresh = this.decoder.addSymbol(frame.symbolId, frame.data);
+    if (fresh) this.symbols++;
+    return { fresh, restarted: false };
+  }
+
+  /** Rebuild the container and verify its checksum. */
+  assemble() {
+    if (!this.complete) throw new Error('transfer incomplete');
+    const out = this.decoder.payload();
+    if (crc32(out) !== this.checksum) throw new Error('checksum mismatch — rescan the code');
+    return out;
+  }
+}
+
+/** Fountain stream parameters for a container at a given density. */
+export function fountainStream(container, spec, transferId = (Math.random() * 0x10000) | 0) {
+  const blockSize = symbolBytes(spec);
+  return {
+    transferId: transferId & 0xffff,
+    k: blockCount(container.length, blockSize),
+    blockSize,
+    totalLen: container.length,
+    checksum: crc32(container),
+  };
+}
+
+export { splitBlocks, encodeSymbol };
