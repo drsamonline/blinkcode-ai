@@ -1,6 +1,6 @@
 name: Build portable EXE + Android APK
 
-# Drop this file into a consuming app repo
+# Drop this file into a consuming app repo as
 # .github/workflows/build-apps.yml (pilot: boericke-repertory).
 #
 # APP_NAME  -> asset names: <APP_NAME>-portable.exe and <APP_NAME>.apk
