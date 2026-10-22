@@ -21,6 +21,7 @@
     "test": "node --test tests/",
     "bench": "node tools/bench.js",
     "tune": "node tools/tune.js",
+    "robustness": "node tools/robustness.js",
     "lint": "eslint ."
   },
   "devDependencies": {

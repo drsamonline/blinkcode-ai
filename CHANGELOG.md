@@ -7,6 +7,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Optical robustness**: median per-cell sampling (robust to edge bleed and
+  glare), a luminance contrast stretch before binarisation, a contrast-based
+  bullseye test instead of an absolute threshold, and a wider multi-threshold
+  marker search. `tools/robustness.js` (`npm run robustness`) measures the
+  margin: noise ±32, blur radius 3, gain 0.3–1.0 all decode.
 - **Rateless (fountain) frame stream** (`src/lib/fountain.js`, `stream.js`): frames
   are now LT symbols with a **systematic prefix**, so the receiver rebuilds the
   container from *any* k + overhead symbols — a missed frame costs one more

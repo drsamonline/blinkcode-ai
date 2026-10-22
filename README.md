@@ -76,6 +76,22 @@ The match model added **~31%** overall over the original order-1 coder. It is
 still beaten by gzip on long repeats, and cannot beat entropy — see the honest
 limits below.
 
+## Robustness
+
+`npm run robustness` pushes a simulated camera (perspective tilt, colour cast,
+vignetting, blur, sensor noise) until the decoder breaks. Current margins on a
+standard-density code:
+
+| condition | still decodes up to |
+| --- | --- |
+| sensor noise | ±32 (8-bit levels) |
+| blur | a 3-pixel box radius |
+| low light (gain) | 0.3× – 1.0× |
+
+The decoder samples each cell with a **median** (robust to edge bleed and glare),
+stretches the capture's contrast before binarising, and tries several thresholds
+when locating the bullseye markers.
+
 ## Honest limits
 
 These matter more than the pitch, so they are stated plainly here and in the
@@ -138,7 +154,7 @@ src/
     surface.js        canvas / buffer drawing targets
   workers/            model loader, compression, decompression, optical decode
   models/ucg-v1.bin   downloadable model bundle
-tools/                build.js, build-model.js, bench.js, tune.js, serve.js
+tools/                build.js, build-model.js, bench.js, tune.js, robustness.js, serve.js
 tests/                codec, stream, predict + end-to-end optical loopback
 docs/                 landing page + built demo (GitHub Pages)
 ```
