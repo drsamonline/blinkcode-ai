@@ -17,6 +17,8 @@ pointing a camera at the sender's screen. No server, no network after the first 
 **Landing page:** https://drsamonline.github.io/blinkcode-ai/
 &nbsp;·&nbsp;
 **Live demo:** https://drsamonline.github.io/blinkcode-ai/play/
+&nbsp;·&nbsp;
+**All projects:** https://drsamonline.github.io/
 
 **Download:** [Windows (.exe)](https://github.com/drsamonline/blinkcode-ai/releases/latest/download/blinkcode-ai-portable.exe) &nbsp;·&nbsp; [Android (.apk)](https://github.com/drsamonline/blinkcode-ai/releases/latest/download/blinkcode-ai.apk)
 
