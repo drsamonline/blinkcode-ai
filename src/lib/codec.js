@@ -1,6 +1,7 @@
 // File DNA pipeline: bytes (or pixels) -> container -> SpectraCode payload.
 
-import { arithEncode, arithDecode, Order1Model } from './arith.js';
+import { arithEncode, arithDecode } from './arith.js';
+import { Order1MatchModel } from './predict.js';
 import { packContainer, unpackContainer, MODE } from './format.js';
 import {
   encodeImageLatent,
@@ -13,11 +14,11 @@ const scalesFor = (model) => model?.latentScales ?? defaultLatentScales();
 const priorsFor = (model) => model?.order1 ?? null;
 
 export function compressBytes(bytes, model) {
-  return arithEncode(bytes, new Order1Model(priorsFor(model)));
+  return arithEncode(bytes, new Order1MatchModel(priorsFor(model)));
 }
 
 export function decompressBytes(bytes, model) {
-  return arithDecode(bytes, new Order1Model(priorsFor(model)));
+  return arithDecode(bytes, new Order1MatchModel(priorsFor(model)));
 }
 
 /**

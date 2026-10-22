@@ -34,11 +34,12 @@ function roundTrip(container, spec, size) {
 }
 
 test('a file larger than one code streams across frames and reassembles', () => {
-  const bytes = new TextEncoder().encode(
-    'BlinkCode streams anything that does not fit in a single frame. '.repeat(400),
-  );
+  // Incompressible, so the container reliably exceeds one frame whatever the
+  // coder's ratio — better compression must not silently turn this into a
+  // single-frame test.
+  const bytes = crypto.getRandomValues(new Uint8Array(9000));
   const spec = specByName('standard');
-  const { container } = encodeFileDna({ name: 'long.txt', mode: MODE.LOSSLESS, bytes }, model);
+  const { container } = encodeFileDna({ name: 'long.bin', mode: MODE.LOSSLESS, bytes }, model);
   assert.ok(container.length > chunkSize(spec), 'test needs a multi-frame payload');
 
   const { collector, frames } = roundTrip(container, spec, 1400);

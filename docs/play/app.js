@@ -3,8 +3,15 @@
 
 import { WorkerClient } from './workers/worker-rpc.js';
 import { CanvasSurface } from './lib/surface.js';
-import { drawSpectraCode, specByName } from './lib/spectracode.js';
-import { chunkSize, parseFrame, FrameCollector } from './lib/stream.js';
+import { drawSpectraCode, specByName, payloadToSymbols } from './lib/spectracode.js';
+import {
+  parseFountainFrame,
+  packFountainFrame,
+  FountainCollector,
+  splitBlocks,
+  encodeSymbol,
+  symbolBytes,
+} from './lib/stream.js';
 import { MODE } from './lib/format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -17,15 +24,15 @@ const workers = {
 
 const state = {
   file: null,
-  frames: null, // Uint8Array[] of palette symbols, one per SpectraCode frame
   spec: specByName('standard'),
   container: null,
-  stream: null,
+  stream: null, // fountain stream parameters (transferId, k, blockSize, ...)
+  blocks: null, // Uint8Array[] source blocks for the fountain encoder
+  symbolId: 0,
   scanning: false,
   wakeLock: null,
   playTimer: null,
-  playIndex: 0,
-  collector: new FrameCollector(),
+  collector: new FountainCollector(),
   resultUrl: null,
   resultBlob: null,
 };
@@ -83,7 +90,7 @@ const framesPerSecond = () => Number($('fps-input').value);
 
 function selectFile(file) {
   state.file = file;
-  state.frames = null;
+  state.blocks = null;
   $('show-btn').disabled = true;
   $('selftest-btn').disabled = true;
   $('send-stats').hidden = true;
@@ -129,7 +136,7 @@ $('fps-input').addEventListener('input', () => {
 $('density-select').addEventListener('change', () => {
   const spec = selectedDensity();
   $('dropzone-hint').textContent =
-    `or drop it here — ${chunkSize(spec).toLocaleString()} B of File DNA per frame, longer files stream`;
+    `or drop it here — ${symbolBytes(spec).toLocaleString()} B per frame, longer files stream`;
 });
 
 const selectedMode = () => Number(document.querySelector('input[name="mode"]:checked').value);
@@ -153,26 +160,27 @@ $('compress-btn').addEventListener('click', async () => {
       transfer.push(payload.bytes);
     }
 
-    const { symbolFrames, container, stats } = await workers.compress.call('compress', payload, {
+    const { container, stream, stats } = await workers.compress.call('compress', payload, {
       transfer,
     });
-    state.frames = symbolFrames;
-    state.container = container;
+    state.container = new Uint8Array(container);
+    state.stream = stream;
+    state.blocks = splitBlocks(state.container, stream.blockSize);
     state.spec = spec;
-    state.playIndex = 0;
+    state.symbolId = 0;
 
     const ratio = stats.originalBytes / stats.containerBytes;
-    const seconds = stats.frames / framesPerSecond();
+    const seconds = Math.ceil((stream.k * 1.1) / framesPerSecond());
     $('send-stats').hidden = false;
     $('send-stats').innerHTML = `
       <dt>Original</dt><dd>${fmtBytes(stats.originalBytes)}</dd>
       <dt>File DNA</dt><dd>${fmtBytes(stats.containerBytes)}</dd>
       <dt>Ratio</dt><dd>${ratio.toFixed(ratio > 10 ? 0 : 2)} : 1</dd>
-      <dt>Frames</dt><dd>${stats.frames} × ${spec.cols}×${spec.rows} · one loop ≈ ${seconds.toFixed(1)} s</dd>
+      <dt>Blocks</dt><dd>${stream.k} × ${spec.cols}×${spec.rows} · one loop ≈ ${seconds} s</dd>
       <dt>Time</dt><dd>${stats.elapsedMs} ms</dd>`;
     setStatus(
       $('send-status'),
-      stats.frames === 1 ? 'Ready to display.' : `Ready — ${stats.frames} frames will loop on screen.`,
+      stream.k === 1 ? 'Ready to display.' : `Ready — rateless stream, ${stream.k} blocks to collect.`,
       'ok',
     );
     $('show-btn').disabled = false;
@@ -191,28 +199,32 @@ function renderTo(canvas, size, symbols) {
   return ctx;
 }
 
+/** Fountain frame for a symbol id, packed into palette symbols. */
+function symbolFor(id) {
+  const data = encodeSymbol(id, state.blocks);
+  return payloadToSymbols(packFountainFrame({ ...state.stream, symbolId: id, data }), state.spec);
+}
+
 function renderPreview() {
   const canvas = $('preview-canvas');
   canvas.hidden = false;
-  renderTo(canvas, 840, state.frames[0]);
+  renderTo(canvas, 840, symbolFor(0));
   canvas.style.width = 'min(100%, 420px)';
 }
 
-/** Loop the frames on screen; a single-frame transfer just stays put. */
+/** Stream fountain symbols on screen. Each pass emits *new* symbols, so a
+ *  missed frame costs one more symbol rather than a whole loop. */
 function startPlayback() {
   clearInterval(state.playTimer);
   const side = Math.min(window.innerWidth, window.innerHeight) * (window.devicePixelRatio || 1);
   const size = Math.round(side);
   const paint = () => {
-    renderTo($('spectra-canvas'), size, state.frames[state.playIndex]);
-    $('frame-counter').textContent =
-      state.frames.length > 1 ? `frame ${state.playIndex + 1} / ${state.frames.length}` : '';
-    state.playIndex = (state.playIndex + 1) % state.frames.length;
+    const id = state.symbolId++;
+    renderTo($('spectra-canvas'), size, symbolFor(id));
+    $('frame-counter').textContent = `symbol ${id + 1} · ${state.stream.k} to collect`;
   };
   paint();
-  if (state.frames.length > 1) {
-    state.playTimer = setInterval(paint, Math.round(1000 / framesPerSecond()));
-  }
+  state.playTimer = setInterval(paint, Math.round(1000 / framesPerSecond()));
 }
 
 async function keepAwake(on) {
@@ -229,7 +241,7 @@ async function keepAwake(on) {
 
 $('show-btn').addEventListener('click', () => {
   $('fullscreen').hidden = false;
-  state.playIndex = 0;
+  state.symbolId = 0;
   startPlayback();
   keepAwake(true);
   document.documentElement.requestFullscreen?.().catch(() => {});
@@ -250,19 +262,22 @@ $('selftest-btn').addEventListener('click', async () => {
   const started = performance.now();
   try {
     const size = state.spec.cols > 60 ? 1400 : 900;
-    const collector = new FrameCollector();
-    for (const symbols of state.frames) {
+    const collector = new FountainCollector();
+    let rendered = 0;
+    const maxSymbols = state.stream.k * 3 + 10;
+    for (let id = 0; id < maxSymbols && !collector.complete; id++) {
       const canvas = new OffscreenCanvas(size, size);
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      drawSpectraCode(new CanvasSurface(ctx), symbols, size, state.spec);
+      drawSpectraCode(new CanvasSurface(ctx), symbolFor(id), size, state.spec);
       const image = ctx.getImageData(0, 0, size, size);
-      collector.add(parseFrame(await decodeFrame(image)));
+      collector.add(parseFountainFrame(await decodeFrame(image)));
+      rendered++;
     }
     const file = await restore(collector.assemble());
     setStatus(
       $('send-status'),
-      `Self-test passed: ${state.frames.length} frame(s) → ${file.name} (${fmtBytes(file.bytes.length)})` +
-        ` in ${Math.round(performance.now() - started)} ms`,
+      `Self-test passed: ${rendered} symbol(s) for ${state.stream.k} blocks → ${file.name}` +
+        ` (${fmtBytes(file.bytes.length)}) in ${Math.round(performance.now() - started)} ms`,
       'ok',
     );
   } catch (err) {
@@ -305,8 +320,8 @@ function updateScanProgress() {
   $('scan-bar').style.width = `${pct}%`;
   $('scan-label').textContent =
     collector.count === 1
-      ? 'Frame captured'
-      : `${collector.received} / ${collector.count} frames — keep the code in view`;
+      ? 'Symbol captured'
+      : `${collector.received} / ${collector.count} blocks — keep the code in view`;
 }
 
 /**
@@ -314,12 +329,17 @@ function updateScanProgress() {
  * @returns {Promise<boolean>} true when the transfer completed
  */
 async function ingest(image) {
-  const frame = parseFrame(await decodeFrame(image));
+  const frame = parseFountainFrame(await decodeFrame(image));
   const { fresh, restarted } = state.collector.add(frame);
-  if (restarted) setStatus($('receive-status'), 'New transfer detected — collecting frames…');
+  if (restarted) setStatus($('receive-status'), 'New transfer detected — collecting symbols…');
   updateScanProgress();
   if (!state.collector.complete) {
-    if (fresh) setStatus($('receive-status'), `Collected frame ${frame.index + 1} of ${frame.count}`);
+    if (fresh) {
+      setStatus(
+        $('receive-status'),
+        `Collected ${state.collector.received} of ${state.collector.count} blocks`,
+      );
+    }
     return false;
   }
   const container = state.collector.assemble();

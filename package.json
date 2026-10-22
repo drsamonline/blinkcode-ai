@@ -1,15 +1,26 @@
 {
   "name": "blinkcode-ai",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
   "author": "Dr Sohil Momin (https://github.com/drsamonline)",
+  "homepage": "https://drsamonline.github.io/blinkcode-ai/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/drsamonline/blinkcode-ai.git"
+  },
   "type": "module",
-  "description": "Single-shot optical file transfer PWA: neural-style compression + SpectraCode colour matrix",
+  "description": "Optical file transfer PWA: File DNA compression + SpectraCode colour matrices.",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
+    "build": "node tools/build.js",
     "build:model": "node tools/build-model.js",
     "serve": "node tools/serve.js",
     "test": "node --test tests/",
+    "bench": "node tools/bench.js",
+    "tune": "node tools/tune.js",
     "lint": "eslint ."
   },
   "devDependencies": {

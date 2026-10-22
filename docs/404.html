@@ -1,57 +1,20 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>404 — nothing to scan | BlinkCode AI</title>
-<meta name="robots" content="noindex, follow" />
-<meta name="theme-color" content="#07080d" />
-<link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Not found — BlinkCode AI</title>
 <style>
-  :root{--violet:#7c3aed;--cyan:#06b6d4;--base:#07080d;--ink:#eef0ff;--muted:#a2a8c3;--line:rgba(255,255,255,.09)}
-  *{box-sizing:border-box}
-  body{
-    margin:0;min-height:100vh;display:grid;place-items:center;text-align:center;
-    font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    color:var(--ink);background:var(--base);padding:2rem;
-  }
-  body::before{
-    content:"";position:fixed;inset:-20% -10% auto -10%;height:110vh;pointer-events:none;
-    background:
-      radial-gradient(46% 42% at 18% 8%,rgba(124,58,237,.42),transparent 62%),
-      radial-gradient(44% 40% at 84% 4%,rgba(6,182,212,.34),transparent 60%);
-    filter:blur(14px);
-  }
-  .box{position:relative;max-width:560px}
-  .frame{
-    width:150px;height:150px;margin:0 auto 1.4rem;border-radius:26px;
-    border:1px solid var(--line);background:rgba(255,255,255,.045);
-    display:grid;place-items:center;backdrop-filter:blur(10px);
-  }
-  h1{font-size:clamp(2rem,7vw,3rem);margin:.2em 0;letter-spacing:-.02em}
-  .grad{background:linear-gradient(115deg,var(--violet),#5b6cf0 45%,var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
-  p{color:var(--muted);margin:.4rem 0 1.4rem}
-  a.btn{
-    display:inline-flex;align-items:center;gap:.5rem;font-weight:700;font-size:.95rem;
-    padding:.8rem 1.3rem;border-radius:999px;color:#fff;text-decoration:none;
-    background:linear-gradient(115deg,var(--violet),var(--cyan));
-    box-shadow:0 22px 60px -28px rgba(124,58,237,.75);
-  }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; background:#0b1020; color:#eef2ff;
+         font-family:ui-sans-serif, system-ui, sans-serif; text-align:center; padding:24px; }
+  a { color:#a5b4fc; } h1 { font-size:3rem; margin:0 0 8px; }
 </style>
 </head>
 <body>
-  <div class="box">
-    <div class="frame">
-      <svg width="86" height="86" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <defs><linearGradient id="g" x1="0" y1="0" x2="24" y2="24"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs>
-        <rect x="1.5" y="4" width="21" height="16" rx="4" stroke="url(#g)" stroke-width="1.6"/>
-        <circle cx="12" cy="12" r="4.4" stroke="url(#g)" stroke-width="1.6"/>
-        <path d="M8.5 20.5 15.5 3.5" stroke="url(#g)" stroke-width="1.6" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <h1>404 — <span class="grad">nothing to scan</span></h1>
-    <p>That path isn't part of BlinkCode AI. The camera found no code to lock onto.</p>
-    <a class="btn" href="/blinkcode-ai/">Back to BlinkCode AI</a>
+  <div>
+    <h1>404</h1>
+    <p>That page is not here.</p>
+    <p><a href="./">Back to BlinkCode AI</a> · <a href="./play/">Open the app</a></p>
   </div>
 </body>
 </html>

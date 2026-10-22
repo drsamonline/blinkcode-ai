@@ -1,11 +1,13 @@
-// Compresses a file into File DNA and packs it into SpectraCode frames.
+// Compresses a file into File DNA and returns the parameters for a rateless
+// frame stream. The sender renders fountain symbols on demand, so it never has
+// to repeat a symbol — a missed frame just costs one more.
 
 import { serve } from './worker-rpc.js';
 import { ensureModelBytes } from '../lib/storage.js';
 import { parseModel } from '../lib/model.js';
 import { encodeFileDna, MODE } from '../lib/codec.js';
-import { payloadToSymbols, specByName } from '../lib/spectracode.js';
-import { splitIntoFrames } from '../lib/stream.js';
+import { specByName } from '../lib/spectracode.js';
+import { fountainStream } from '../lib/stream.js';
 
 let model = null;
 async function getModel() {
@@ -35,24 +37,22 @@ serve({
         : { name, mode, bytes: new Uint8Array(bytes) };
     const { container, stats } = encodeFileDna(input, loaded);
 
-    const { frames, transferId, checksum } = splitIntoFrames(container, spec);
-    const symbolFrames = frames.map((frame) => payloadToSymbols(frame, spec));
+    const stream = fountainStream(container, spec);
 
     return {
       result: {
         container,
-        symbolFrames,
-        transferId,
-        checksum,
+        stream,
         density: spec.name,
         stats: {
           ...stats,
-          frames: frames.length,
+          k: stream.k,
+          blockSize: stream.blockSize,
           density: spec.name,
           elapsedMs: Math.round(performance.now() - started),
         },
       },
-      transfer: [container.buffer, ...symbolFrames.map((s) => s.buffer)],
+      transfer: [container.buffer],
     };
   },
 });
