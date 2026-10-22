@@ -169,7 +169,7 @@ export function arithEncode(data, model) {
   return out.finish();
 }
 
-export function arithDecode(bytes, model, maxBytes = 1 << 24) {
+export function arithDecode(bytes, model, maxBytes = 1 << 26) {
   const input = new BitReader(bytes);
   let low = 0;
   let high = 0xffffffff;

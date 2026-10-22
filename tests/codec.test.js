@@ -61,3 +61,10 @@ test('arithmetic coder round-trips binary and empty input', () => {
     assert.deepEqual(dec, data);
   }
 });
+
+test('the arithmetic decoder enforces its byte cap', () => {
+  const bytes = crypto.getRandomValues(new Uint8Array(64 * 1024));
+  const enc = arithEncode(bytes, new Order1Model(null));
+  assert.throws(() => arithDecode(enc, new Order1Model(null), 1024), /too large/);
+  assert.deepEqual(arithDecode(enc, new Order1Model(null)), bytes);
+});

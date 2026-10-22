@@ -160,6 +160,10 @@ export const FOUNTAIN_MAGIC = 0xb2;
 export const FOUNTAIN_VERSION = 1;
 export const FOUNTAIN_HEADER = 20;
 
+// A frame is untrusted input: bound what a header may claim, so a corrupt or
+// crafted frame cannot make the receiver allocate a huge decoder.
+export const MAX_CONTAINER = 64 * 1024 * 1024;
+
 /** Symbol bytes that fit one SpectraCode frame at this density. */
 export const symbolBytes = (spec) => spec.payloadCapacity - FOUNTAIN_HEADER;
 
@@ -188,11 +192,18 @@ export function parseFountainFrame(bytes) {
   const k = view.getUint16(4, false);
   const blockSize = view.getUint16(6, false);
   if (k === 0 || blockSize === 0) throw new Error('frame has an empty grid');
+  // The payload must actually carry `blockSize` bytes, and k blocks must be able
+  // to hold the container — otherwise a crafted frame could request a huge
+  // allocation in the fountain decoder.
+  if (bytes.length < FOUNTAIN_HEADER + blockSize) throw new Error('frame payload truncated');
+  const totalLen = view.getUint32(8, false);
+  if (totalLen > k * blockSize) throw new Error('frame sizes are inconsistent');
+  if (totalLen > MAX_CONTAINER) throw new Error('frame declares an oversized transfer');
   return {
     transferId: view.getUint16(2, false),
     k,
     blockSize,
-    totalLen: view.getUint32(8, false),
+    totalLen,
     checksum: view.getUint32(12, false),
     symbolId: view.getUint32(16, false),
     data: bytes.slice(FOUNTAIN_HEADER, FOUNTAIN_HEADER + blockSize),

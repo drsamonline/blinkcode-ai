@@ -43,17 +43,32 @@ test('LT decoder rebuilds the container from any enough symbols', () => {
 test('fountain frames pack and parse, and reject non-frames', () => {
   const data = new Uint8Array(32).map((_, i) => i);
   const frame = packFountainFrame({
-    transferId: 0x1234, k: 9, blockSize: 32, totalLen: 300, checksum: 0xdeadbeef, symbolId: 5, data,
+    transferId: 0x1234, k: 10, blockSize: 32, totalLen: 300, checksum: 0xdeadbeef, symbolId: 5, data,
   });
   const parsed = parseFountainFrame(frame);
   assert.equal(parsed.transferId, 0x1234);
-  assert.equal(parsed.k, 9);
+  assert.equal(parsed.k, 10);
   assert.equal(parsed.blockSize, 32);
   assert.equal(parsed.totalLen, 300);
   assert.equal(parsed.checksum, 0xdeadbeef);
   assert.equal(parsed.symbolId, 5);
   assert.deepEqual(parsed.data, data);
   assert.throws(() => parseFountainFrame(Uint8Array.of(1, 2, 3)), /truncated/);
+});
+
+test('frames with impossible sizes are rejected', () => {
+  const data = new Uint8Array(32);
+  // totalLen larger than k * blockSize can never be a real transfer
+  const bad = packFountainFrame({
+    transferId: 1, k: 2, blockSize: 32, totalLen: 5000, checksum: 1, symbolId: 0, data,
+  });
+  assert.throws(() => parseFountainFrame(bad), /inconsistent/);
+
+  // a header claiming more payload than the frame carries
+  const short = packFountainFrame({
+    transferId: 1, k: 2, blockSize: 32, totalLen: 40, checksum: 1, symbolId: 0, data,
+  }).subarray(0, 30);
+  assert.throws(() => parseFountainFrame(short), /truncated/);
 });
 
 test('FountainCollector tolerates duplicates and out-of-order symbols', () => {
