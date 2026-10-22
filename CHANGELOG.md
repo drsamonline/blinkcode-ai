@@ -47,6 +47,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   shrunk its payload below one frame.
 
 ### Fixed
+- Frames are validated on parse (truncated payload, inconsistent
+  k/blockSize/totalLen, oversized transfers) — an allocation guard against a
+  crafted frame.
+- The arithmetic decoder's default cap is raised from 16 MB to 64 MB, matching
+  what the app accepts; a large incompressible file used to fail to open.
 - Fountain degree distribution went negative for small k — the Robust Soliton
   spike term is `R·ln(R/δ)/k`, which is negative when `R/δ < 1` — inflating
   overhead badly. It is now clamped, and a systematic prefix makes a clean pass
