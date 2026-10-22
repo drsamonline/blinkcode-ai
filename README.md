@@ -8,11 +8,11 @@ Optical file transfer as an offline-first PWA — a file is compressed into a co
 *File DNA* container, painted as **SpectraCode** colour matrices, and recovered by
 pointing a camera at the sender's screen. No server, no network after the first launch.
 
-[![Licence: source-available](https://img.shields.io/badge/license-source--available-7c3aed
-[![PWA: offline-first](https://img.shields.io/badge/PWA-offline--first-06b6d4
-[![Vanilla JS: no build step](https://img.shields.io/badge/vanilla%20JS-no%20build%20step-7c3aed
-[![Last commit](https://img.shields.io/github/last-commit/drsamonline/blinkcode-ai
-[![Stars](https://img.shields.io/github/stars/drsamonline/blinkcode-ai
+[![Licence: source-available](https://img.shields.io/badge/license-source--available-7c3aed)](LICENSE)
+[![PWA: offline-first](https://img.shields.io/badge/PWA-offline--first-06b6d4)](https://drsamonline.github.io/blinkcode-ai/play/)
+[![Vanilla JS: no build step](https://img.shields.io/badge/vanilla%20JS-no%20build%20step-7c3aed)](https://github.com/drsamonline/blinkcode-ai)
+[![Last commit](https://img.shields.io/github/last-commit/drsamonline/blinkcode-ai)](https://github.com/drsamonline/blinkcode-ai/commits)
+[![Stars](https://img.shields.io/github/stars/drsamonline/blinkcode-ai)](https://github.com/drsamonline/blinkcode-ai/stargazers)
 
 **Landing page:** https://drsamonline.github.io/blinkcode-ai/
 &nbsp;·&nbsp;
