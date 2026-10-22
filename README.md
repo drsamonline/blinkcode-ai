@@ -18,6 +18,8 @@ pointing a camera at the sender's screen. No server, no network after the first 
 &nbsp;·&nbsp;
 **Live demo:** https://drsamonline.github.io/blinkcode-ai/play/
 
+**Download:** [Windows (.exe)](https://github.com/drsamonline/blinkcode-ai/releases/latest/download/blinkcode-ai-portable.exe) &nbsp;·&nbsp; [Android (.apk)](https://github.com/drsamonline/blinkcode-ai/releases/latest/download/blinkcode-ai.apk)
+
 </div>
 
 ---
