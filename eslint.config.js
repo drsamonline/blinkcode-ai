@@ -30,7 +30,7 @@ export default [
         TextEncoder: 'readonly',
         TextDecoder: 'readonly',
         process: 'readonly',
-        Buffer: 'readonly',
+        Buffer: 'readonly', btoa: 'readonly', atob: 'readonly', module: 'readonly', require: 'readonly', exports: 'readonly', globalThis: 'readonly',
       },
     },
     rules: {
