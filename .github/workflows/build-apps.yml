@@ -37,6 +37,7 @@ concurrency:
 jobs:
   app:
     uses: drsamonline/app-builder/.github/workflows/build.yml@main
+    timeout-minutes: 30
     with:
       app_name: blinkcode-ai
       app_src: docs/play
