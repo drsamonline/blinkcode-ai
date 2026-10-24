@@ -44,5 +44,4 @@ jobs:
     permissions:
       contents: write
       pages: write
-      id-token: true
       id-token: write
