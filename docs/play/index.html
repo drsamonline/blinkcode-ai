@@ -143,5 +143,96 @@
     </div>
 
     <script type="module" src="app.js"></script>
-  </body>
+  
+<style>:focus-visible{outline:2px solid currentColor;outline-offset:2px}</style>
+<script>
+/* THE FOUR THINGS EVERY APP HERE SHOULD HAVE: export, restore, undo, keyboard.
+   Hooked at what every app shares - localStorage and document - not at each app's internals,
+   so none of them can silently do nothing. */
+(function () {
+  function typing(e) { var t = e.target || {}; return /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable === true; }
+  function say(m) { var d = document.createElement("div"); d.textContent = m; d.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:96px;background:#111;color:#eee;border:1px solid #444;border-radius:8px;padding:8px 14px;font:13px system-ui;z-index:10000"; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 1700); }
+  window.__exportAll = function () {
+    var out = { app: document.title, exported: new Date().toISOString(), storage: {} };
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf("__") !== 0) out.storage[k] = localStorage.getItem(k); } } catch (e) { out.storageError = String(e); }
+    var name = (document.title || "app").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-data-" + new Date().toISOString().slice(0, 10) + ".json";
+    var json = JSON.stringify(out, null, 2);
+    if (window.Export && typeof Export.save === "function") Export.save(name, json, "application/json");
+    else { var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([json], { type: "application/json" })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
+    return name;
+  };
+  window.__importAll = function () {
+    var inp = document.createElement("input"); inp.type = "file"; inp.accept = ".json,application/json";
+    inp.onchange = function () {
+      var f = inp.files && inp.files[0]; if (!f) return;
+      var r = new FileReader();
+      r.onload = function () {
+        var data; try { data = JSON.parse(String(r.result)); } catch (e) { alert("That is not a JSON backup."); return; }
+        var store = data && (data.storage || data.localStorage || data);
+        if (!store || typeof store !== "object") { alert("No stored data found in that file."); return; }
+        var keys = Object.keys(store); if (!keys.length) { alert("That backup is empty."); return; }
+        if (!confirm("This backup has " + keys.length + " item(s).\n\nRESTORE THEM? This replaces what this app has stored now.")) return;
+        keys.forEach(function (k) { var v = store[k]; localStorage.setItem(k, typeof v === "string" ? v : JSON.stringify(v)); });
+        alert("Restored " + keys.length + " item(s). Reloading."); location.reload();
+      };
+      r.readAsText(f);
+    };
+    inp.click();
+  };
+  var history = [], orig = localStorage.setItem.bind(localStorage);
+  localStorage.setItem = function (k, v) {
+    try { var prev = localStorage.getItem(k); if (prev !== String(v) && String(k).indexOf("__") !== 0) { history.push({ k: k, prev: prev }); if (history.length > 60) history.shift(); } } catch (e) {}
+    return orig(k, v);
+  };
+  window.__undo = function () {
+    var h = history.pop(); if (!h) { say("Nothing to undo"); return false; }
+    try { if (h.prev === null) localStorage.removeItem(h.k); else orig(h.k, h.prev); } catch (e) { say("Could not undo"); return false; }
+    say("Undone. Reloading."); setTimeout(function () { location.reload(); }, 350); return true;
+  };
+  function overlay() {
+    var old = document.getElementById("__keysHelp"); if (old) { old.remove(); return; }
+    var b = document.createElement("div"); b.id = "__keysHelp";
+    b.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:10001;display:flex;align-items:center;justify-content:center;font:14px system-ui;color:#eee";
+    b.innerHTML = '<div style="background:#15181f;border:1px solid #333;border-radius:12px;padding:20px 24px;max-width:360px"><div style="font-weight:700;margin-bottom:10px">Keyboard</div><div style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px"><kbd style="background:#222;border-radius:4px;padding:1px 6px">/</kbd><span>focus search</span><kbd style="background:#222;border-radius:4px;padding:1px 6px">?</kbd><span>this list</span><kbd style="background:#222;border-radius:4px;padding:1px 6px">Esc</kbd><span>leave a field</span><kbd style="background:#222;border-radius:4px;padding:1px 6px">Ctrl Z</kbd><span>undo</span></div></div>';
+    b.onclick = function () { b.remove(); }; document.body.appendChild(b);
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { if (typing(e)) e.target.blur(); var b = document.getElementById("__keysHelp"); if (b) b.remove(); return; }
+    if (e.ctrlKey || e.metaKey || e.altKey) { if ((e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === "z" && !typing(e)) { e.preventDefault(); window.__undo(); } return; }
+    if (typing(e)) return;
+    if (e.key === "/") { var s = document.querySelector('input[type="search"], input[placeholder*="search" i], input[id*="search" i], input[type="text"]'); if (s) { e.preventDefault(); s.focus(); if (s.select) s.select(); } return; }
+    if (e.key === "?") { e.preventDefault(); overlay(); }
+  });
+  function add() {
+    if (!document.body || document.getElementById("__tools")) return;
+    var wrap = document.createElement("div"); wrap.id = "__tools";
+    wrap.style.cssText = "position:fixed;left:10px;bottom:10px;z-index:9998;display:flex;gap:6px;flex-wrap:wrap;max-width:70vw";
+    [["Save my data", window.__exportAll], ["Restore", window.__importAll], ["Undo", window.__undo], ["?", overlay]].forEach(function (b) {
+      var el = document.createElement("button"); el.textContent = b[0];
+      el.style.cssText = "background:#111;color:#eee;border:1px solid #444;border-radius:8px;padding:6px 10px;font:12px system-ui;cursor:pointer;opacity:.75";
+      el.onclick = b[1]; wrap.appendChild(el);
+    });
+    document.body.appendChild(wrap);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", add); else add();
+})();
+</script>
+
+<script>
+window.__smokeTest = function () {
+  var out = []; function ok(n, c) { out.push((c ? "PASS " : "FAIL ") + n); }
+  ok("the document rendered", !!document.body && document.body.children.length > 0);
+  ok("a heading is present", !!document.querySelector("h1, h2"));
+  ok("no script threw during load", !window.__bootError);
+  var kits = ["Export","Loom","CryptoKit","Case","Search","Srs","Game","Art","Audio","Ml","UI","Lan","Astro"];
+  var found = kits.filter(function (k) { return window[k]; });
+  ok("at least one kit is loaded (" + (found.join(", ") || "none") + ")", found.length > 0);
+  try { localStorage.setItem("__smoke","1"); ok("storage works", localStorage.getItem("__smoke") === "1"); localStorage.removeItem("__smoke"); } catch (e) { ok("storage works", false); }
+  console.log(out.join("\n"));
+  if (location.search.indexOf("test") >= 0) { var d = document.createElement("pre"); d.textContent = out.join("\n"); d.style.cssText = "position:fixed;left:0;right:0;bottom:0;background:#111;color:#eee;padding:12px;font:12px ui-monospace,monospace;z-index:99999;max-height:40vh;overflow:auto;white-space:pre-wrap"; document.body.appendChild(d); }
+  return out;
+};
+window.addEventListener("error", function () { window.__bootError = true; });
+</script>
+</body>
 </html>
