@@ -4,6 +4,12 @@
 
 # BlinkCode AI
 
+<!-- shot:start -->
+
+![Screenshot](docs/shot.png)
+
+<!-- shot:end -->
+
 **Point your camera, get the file.**
 
 A file is compressed into a compact *File DNA* container, painted as
