@@ -1,4 +1,8 @@
-/* global module, btoa, atob */
+/* global module */
+// `btoa` and `atob` were declared here but never used in this file, so ESLint's
+// no-unused-vars reported them as errors and `npm run lint` failed - which is why
+// this repository's CI has been red. Both are globals in Node 16+ and in every
+// browser, so they need no declaration; `module` stays because this file is CJS.
 /* frame-kit — the shared transfer-frame core for drsamonline apps.
  *
  * One file, no build step, no dependencies. It provides the *framing* layer that
