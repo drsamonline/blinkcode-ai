@@ -1,7 +1,7 @@
 # Build + release + deploy. One push, one pipeline, all from the same commit.
 #
 # SPDX-FileCopyrightText: 2026 Dr Sohil Momin
-# SPDX-License-Identifier: LicenseRef-Forge-Proprietary
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 #
 # This file is intentionally tiny: the whole pipeline lives in the public
 # app-builder kit, so a fix there reaches every app at once. It used to be a
