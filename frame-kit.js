@@ -18,7 +18,7 @@
  *   - the small byte/checksum utilities the frame and its callers share
  *     (CRC-16/CCITT, CRC-32, a seeded PRNG, XOR/concat, size formatting).
  *
- * MIT License. (c) 2026 Dr Sohil Momin.
+ * PolyForm Noncommercial 1.0.0. (c) 2026 Dr Sohil Momin.
  */
 (function (root) {
   "use strict";

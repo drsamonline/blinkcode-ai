@@ -9,7 +9,7 @@
  *   - a sender and a receiver with progress;
  *   - a pluggable codec: the app supplies the QR / colour-matrix renderer.
  *
- * MIT License. (c) 2026 Dr Sohil Momin.
+ * PolyForm Noncommercial 1.0.0. (c) 2026 Dr Sohil Momin.
  */
 (function (root) {
   "use strict";
