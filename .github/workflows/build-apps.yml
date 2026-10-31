@@ -36,7 +36,7 @@ concurrency:
 
 jobs:
   app:
-    uses: drsamonline/app-builder/.github/workflows/build.yml@e40fa69e7087af75588439125dd536789967d07b   # was @main
+    uses: drsamonline/app-builder/.github/workflows/build.yml@246da5d54862d2571b0b37feb10499e467f20d7d   # was @main
     with:
       app_name: blinkcode-ai
       app_src: docs/play
