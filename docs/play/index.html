@@ -163,5 +163,21 @@ window.__smokeTest = function () {
 };
 window.addEventListener("error", function () { window.__bootError = true; });
 </script>
+<style id="app-theme">
+  /* blinkcode-ai - its own palette, type and shape.
+     Keyed on data-theme so the in-app theme toggle still works; !important is
+     required because web-kit sets these as inline styles on <html>. */
+  html[data-theme="dark"]{--bg:#051016 !important;--card:#051922 !important;--ink:#eef7fa !important;--mut:#5092ab !important;--line:#062732 !important;--acc:#4db0c8 !important;}
+  html[data-theme="light"]{--bg:#f4fafc !important;--card:#ffffff !important;--ink:#0b1f29 !important;--mut:#25819c !important;--line:#dcf0f4 !important;--acc:#077792 !important;}
+  html,body{font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace !important;letter-spacing:.02em !important;
+    background-image:radial-gradient(820px 360px at 50% -170px,
+      color-mix(in srgb, var(--acc) 16%, transparent), transparent 72%) !important;
+    background-repeat:no-repeat !important;background-attachment:fixed !important}
+  button,input,textarea,select{font-family:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace !important}
+  button,.btn{border-radius:6px !important}
+  input,textarea,select{border-radius:4px !important}
+  .card,[class*="card"]{border-radius:8px !important}
+  button:not(.ghost):not(.tab){background:var(--acc) !important}
+</style>
 </body>
 </html>
