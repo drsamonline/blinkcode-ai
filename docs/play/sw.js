@@ -2,7 +2,7 @@
 // The model bundle is deliberately not precached — `lib/storage.js` owns that
 // one-time download and its own cache entry.
 
-const SHELL_CACHE = 'blinkcode-shell-v3';
+const SHELL_CACHE = 'blinkcode-shell-v4';
 const SHELL = [
   './',
   'index.html',
@@ -52,6 +52,21 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  // Documents are network-first: a cached index.html would hide every release,
+  // which is exactly how a fixed app keeps looking broken. Assets stay
+  // cache-first, which is what makes it work offline.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(SHELL_CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+          return response;
+        })
+        .catch(() => caches.match(request).then((hit) => hit || caches.match('./index.html'))),
+    );
+    return;
+  }
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
   event.respondWith(
     caches.match(request).then(
