@@ -14,6 +14,12 @@
     <header class="topbar">
       <h1>BlinkCode<span>AI</span></h1>
       <div id="model-chip" class="chip" data-state="pending">checking model…</div>
+      <button class="theme-toggle" id="theme" type="button" aria-label="Switch colour theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M18.7 5.3 17 7M7 17l-1.7 1.7"/>
+        </svg>
+        <span id="theme-label">Light</span>
+      </button>
     </header>
 
     <div id="model-progress" class="progress" hidden>
@@ -179,5 +185,26 @@ window.addEventListener("error", function () { window.__bootError = true; });
   .card,[class*="card"]{border-radius:8px !important}
   button:not(.ghost):not(.tab){background:var(--acc) !important}
 </style>
+<script>
+(function () {
+  var root = document.documentElement, btn = document.getElementById('theme');
+  var label = document.getElementById('theme-label'), KEY = 'blinkcode-theme';
+  function paint(mode) {
+    var dark = mode === 'dark' || (mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    label.textContent = dark ? 'Dark' : 'Light';
+  }
+  var stored = localStorage.getItem(KEY);
+  paint(stored || 'system');
+  if (!stored) root.removeAttribute('data-theme');
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, next); paint(next);
+  });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+    if (!localStorage.getItem(KEY)) paint('system');
+  });
+})();
+</script>
 </body>
 </html>
