@@ -559,10 +559,12 @@ fieldset.modes select {
 /* disabled is a state, not a fault: no washed-out gradient, just a quiet bar
    that says the button is waiting for something */
 #compress-btn.primary:disabled {
-  background: color-mix(in srgb, var(--text) 5%, var(--panel));
-  color: var(--muted); opacity: 1; box-shadow: none;
-  border: 1px dashed var(--line);
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+  color: color-mix(in srgb, var(--text) 65%, transparent);
+  opacity: 1; box-shadow: none;
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--line));
 }
+#model-chip[data-state="error"] { cursor: pointer; border-color: var(--err); color: var(--err); }
 
 .status:not(:empty) {
   border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px; margin-top: 12px;
