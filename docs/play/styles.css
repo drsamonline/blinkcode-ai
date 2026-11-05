@@ -469,3 +469,108 @@ button.primary, .tab.active {
 }
 .theme-toggle:hover { color: var(--text); border-color: var(--accent); }
 .theme-toggle svg { width: 13px; height: 13px; }
+
+
+/* ---- cards and tiles, not long lines -------------------------------------
+   Every control keeps its id and its handler; only the shape changes. Each
+   group becomes a card, each choice a tile you can hit with a thumb, and the
+   primary action a full-width bar. */
+
+.panel { padding: 16px; }
+
+/* the drop target: the one thing on the screen you are meant to press */
+.dropzone {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; text-align: center; min-height: 150px; padding: 24px 18px;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 14px; background: var(--panel); cursor: pointer;
+  transition: border-color .15s, background .15s, transform .15s;
+}
+.dropzone:hover, .dropzone:focus-within {
+  border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--panel));
+  transform: translateY(-1px);
+}
+.dropzone strong { font-size: 17px; letter-spacing: -.01em; }
+.dropzone span { color: var(--muted); font-size: 13px; max-width: 34ch; }
+
+/* the collapsible text sender is a card too */
+.text-send {
+  border: 1px solid var(--line); border-radius: 14px; background: var(--panel);
+  padding: 0; overflow: hidden;
+}
+.text-send summary {
+  padding: 14px 16px; cursor: pointer; font-size: 14px; color: var(--muted);
+  list-style: none; display: flex; align-items: center; gap: 8px;
+}
+.text-send summary::-webkit-details-marker { display: none; }
+.text-send summary::before {
+  content: '+'; font-family: var(--mono); color: var(--accent); font-size: 15px; width: 14px;
+}
+.text-send[open] summary::before { content: '–'; }
+.text-send summary:hover { color: var(--text); }
+.text-send textarea { margin: 0 14px 12px; width: calc(100% - 28px); }
+.text-send .row { padding: 0 14px 14px; }
+
+/* choice groups: a card holding tiles, not a list of radio rows */
+fieldset.modes {
+  border: 1px solid var(--line); border-radius: 14px; background: var(--panel);
+  padding: 14px; margin: 14px 0 0; display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+fieldset.modes legend {
+  grid-column: 1 / -1; padding: 0 0 2px; font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted); font-family: var(--mono);
+}
+
+/* every label inside a group is a tile */
+fieldset.modes label {
+  display: flex; align-items: center; gap: 10px; min-height: 54px;
+  padding: 12px 14px; margin: 0; border: 1px solid var(--line); border-radius: 11px;
+  background: color-mix(in srgb, var(--text) 3%, var(--panel));
+  cursor: pointer; font-size: 14px; transition: border-color .15s, background .15s;
+}
+fieldset.modes label:hover { border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); }
+fieldset.modes label:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+fieldset.modes label.inline { gap: 10px; }
+fieldset.modes label.inline input[type="range"] { flex: 1; min-width: 90px; }
+fieldset.modes select {
+  width: 100%; background: transparent; border: 0; color: var(--text);
+  font: inherit; font-size: 14px; cursor: pointer;
+}
+
+/* actions: tiles, the primary one a bar you cannot miss */
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.row button {
+  min-height: 46px; border-radius: 11px; font-size: 14px;
+  border: 1px solid var(--line); background: color-mix(in srgb, var(--text) 4%, var(--panel));
+  color: var(--text); cursor: pointer; transition: border-color .15s, transform .1s;
+}
+.row button:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-1px); }
+.row button:disabled { opacity: .38; cursor: default; }
+#compress-btn.primary {
+  grid-column: 1 / -1; min-height: 52px; font-size: 15.5px; font-weight: 600;
+  background: linear-gradient(92deg, var(--accent2), var(--accent)); color: #0b1020;
+  border: 0; box-shadow: 0 14px 34px -18px var(--accent2);
+}
+/* disabled is a state, not a fault: no washed-out gradient, just a quiet bar
+   that says the button is waiting for something */
+#compress-btn.primary:disabled {
+  background: color-mix(in srgb, var(--text) 5%, var(--panel));
+  color: var(--muted); opacity: 1; box-shadow: none;
+  border: 1px dashed var(--line);
+}
+
+.status:not(:empty) {
+  border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px; margin-top: 12px;
+  background: var(--panel);
+}
+.stats { border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px; margin-top: 12px; }
+.preview { border: 1px solid var(--line); border-radius: 12px; margin-top: 12px; max-width: 100%; }
+
+@media (min-width: 720px) {
+  fieldset.modes { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+}
