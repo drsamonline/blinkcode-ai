@@ -23,6 +23,15 @@ export class WorkerClient {
     this.worker = new Worker(url, { type: 'module' });
     this.pending = new Map();
     this.nextId = 1;
+    // A worker that fails to load, or throws at the top level, used to leave
+    // every pending call waiting forever. Fail them instead.
+    const fail = (message) => {
+      for (const [, entry] of this.pending) entry.reject(new Error(message));
+      this.pending.clear();
+    };
+    this.worker.onerror = (event) => fail(event.message || 'worker failed to start');
+    this.worker.onmessageerror = () => fail('worker message could not be deserialised');
+
     this.worker.onmessage = (event) => {
       const { id, ok, result, error, progress } = event.data;
       const entry = this.pending.get(id);
