@@ -550,7 +550,7 @@ fieldset.modes select {
   color: var(--text); cursor: pointer; transition: border-color .15s, transform .1s;
 }
 .row button:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-1px); }
-.row button:disabled { opacity: .38; cursor: default; }
+.row button:disabled { opacity: .62; cursor: default; }
 #compress-btn.primary {
   grid-column: 1 / -1; min-height: 52px; font-size: 15.5px; font-weight: 600;
   background: linear-gradient(92deg, var(--accent2), var(--accent)); color: #0b1020;
@@ -558,11 +558,14 @@ fieldset.modes select {
 }
 /* disabled is a state, not a fault: no washed-out gradient, just a quiet bar
    that says the button is waiting for something */
+/* The primary bar must never vanish. Disabled keeps a solid fill and the
+   page's own ink, so the label is legible in both themes - the earlier version
+   left it transparent with a 65% ink and it read as an empty strip. */
 #compress-btn.primary:disabled {
-  background: color-mix(in srgb, var(--accent) 10%, var(--panel));
-  color: color-mix(in srgb, var(--text) 65%, transparent);
-  opacity: 1; box-shadow: none;
-  border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--text) 12%, var(--panel));
+  color: var(--text);
+  opacity: 1; box-shadow: none; font-weight: 600;
+  border: 1px dashed color-mix(in srgb, var(--text) 40%, var(--line));
 }
 #model-chip[data-state="error"] { cursor: pointer; border-color: var(--err); color: var(--err); }
 
