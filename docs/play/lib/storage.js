@@ -8,6 +8,17 @@
 import { MODEL_URL } from './model.js';
 
 const CACHE_NAME = 'blinkcode-model-v1';
+
+/* Cache Storage and IndexedDB can both stall — in private windows, when a
+   browser has storage disabled, or when a cache is being evicted mid-read.
+   A stall used to hang the whole boot on "checking model…" with no way out, so
+   every storage read is now bounded and falls back to a plain download. */
+function withTimeout(promise, ms, fallback) {
+  return Promise.race([
+    promise,
+    new Promise((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
 const DB_NAME = 'blinkcode';
 const STORE = 'models';
 
@@ -40,15 +51,21 @@ async function idbPut(key, value) {
 
 async function fromCache() {
   if (typeof caches === 'undefined') return null;
-  const cache = await caches.open(CACHE_NAME);
-  const hit = await cache.match(MODEL_URL);
-  return hit ? new Uint8Array(await hit.arrayBuffer()) : null;
+  try {
+    return await withTimeout((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const hit = await cache.match(MODEL_URL);
+      return hit ? new Uint8Array(await hit.arrayBuffer()) : null;
+    })(), 1500, null);
+  } catch {
+    return null;
+  }
 }
 
 export async function storedModelBytes() {
   const cached = await fromCache();
   if (cached) return cached;
-  const stored = await idbGet(MODEL_URL).catch(() => null);
+  const stored = await withTimeout(idbGet(MODEL_URL).catch(() => null), 1500, null);
   return stored ? new Uint8Array(stored) : null;
 }
 
@@ -83,14 +100,22 @@ export async function downloadModel(onProgress) {
     bytes = new Uint8Array(await response.arrayBuffer());
   }
 
+  // Persisting is a convenience, never a precondition: if either store stalls
+  // the bytes we already have are returned and the app runs.
   if (typeof caches !== 'undefined') {
-    const cache = await caches.open(CACHE_NAME);
-    await cache.put(
-      MODEL_URL,
-      new Response(bytes, { headers: { 'content-type': 'application/octet-stream' } }),
+    await withTimeout(
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(
+          MODEL_URL,
+          new Response(bytes, { headers: { 'content-type': 'application/octet-stream' } }),
+        );
+      })().catch(() => {}),
+      2000,
+      null,
     );
   }
-  await idbPut(MODEL_URL, bytes).catch(() => {});
+  await withTimeout(idbPut(MODEL_URL, bytes).catch(() => {}), 2000, null);
   return bytes;
 }
 
