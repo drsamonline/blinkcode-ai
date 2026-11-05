@@ -50,6 +50,8 @@ function setStatus(el, message, tone = '') {
 async function bootModel() {
   const chip = $('model-chip');
   const progress = $('model-progress');
+  const compressBtn = $('compress-btn');
+  compressBtn.textContent = 'Loading model…';
   try {
     const status = await workers.model.call('status');
     if (!status.cached) {
@@ -61,13 +63,20 @@ async function bootModel() {
     progress.hidden = true;
     chip.dataset.state = 'ready';
     chip.textContent = `model v${info.version} · ${fmtBytes(info.bytes)} · offline ready`;
-    $('compress-btn').disabled = !state.file;
+    compressBtn.textContent = 'Compress';
+    compressBtn.disabled = !state.file;
   } catch (err) {
     chip.dataset.state = 'error';
-    chip.textContent = 'model unavailable';
+    chip.textContent = 'model unavailable — tap to retry';
+    compressBtn.textContent = 'Compress';
     setStatus($('send-status'), `Model load failed: ${err.message}`, 'err');
   }
 }
+
+// a failed model load is a state you can leave, not a dead end
+$('model-chip').addEventListener('click', () => {
+  if ($('model-chip').dataset.state !== 'ready') bootModel();
+});
 
 // --------------------------------------------------------------------- tabs
 
