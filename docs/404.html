@@ -8,7 +8,21 @@
   body { margin:0; min-height:100vh; display:grid; place-items:center; background:#0b1020; color:#eef2ff;
          font-family:ui-sans-serif, system-ui, sans-serif; text-align:center; padding:24px; }
   a { color:#a5b4fc; } h1 { font-size:3rem; margin:0 0 8px; }
+  :root[data-theme="light"] body{background:#f6f7fb;color:#1a1f36}
+  :root[data-theme="light"] a{color:#3b4fd8}
 </style>
+<script>
+/* A 404 is not a page you land on by choice, but it must not flash the wrong theme: it
+   reads the same key the rest of the site writes, and falls back to the reader's
+   system preference. No control here - the site's own toggle owns that. */
+(function () {
+  try {
+    var s = localStorage.getItem("blinkcode-landing-theme");
+    var dark = s ? s === "dark" : !matchMedia("(prefers-color-scheme: light)").matches;
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
   <div>
