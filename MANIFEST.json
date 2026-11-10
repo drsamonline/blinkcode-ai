@@ -21,10 +21,10 @@
       "at": "2026-11-04T20:02:46Z"
     },
     ".github/workflows/build-apps.yml": {
-      "sha": "8d617ccfd9954db63510efbbd307dca34e2a1ca6",
+      "sha": "a807ee9e911e5339784ec2d95b3ea30e71774d86",
       "producer": "audit-2026-11-10",
       "class": "canonical",
-      "at": "2026-11-10T14:48:48Z"
+      "at": "2026-11-10T15:06:43Z"
     },
     "docs/404.html": {
       "sha": "ea9c69aa7eb3bf173be137b96d6a6395ee1d7b2b",
@@ -33,5 +33,5 @@
       "at": "2026-11-06T13:30:43Z"
     }
   },
-  "updated": "2026-11-10T14:48:48Z"
+  "updated": "2026-11-10T15:06:43Z"
 }
