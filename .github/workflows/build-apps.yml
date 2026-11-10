@@ -44,4 +44,5 @@ jobs:
     permissions:
       contents: write
       pages: write
+      actions: write    # the shot job dispatches the run that publishes its picture
       id-token: write
