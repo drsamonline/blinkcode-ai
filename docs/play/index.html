@@ -9,7 +9,18 @@
     <link rel="icon" href="icons/icon-192.png" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <link rel="stylesheet" href="styles.css" />
-  </head>
+  <style>
+/* ---- a11y: the rule each label needs, chosen against its measured surface -- */
+[data-theme="dark"] button.tab.active{color:#0b1020!important}
+[data-theme="dark"] button.tab{color:#ffffff!important}
+[data-theme="light"] button.theme-toggle{color:#ffffff!important}
+[data-theme="light"] button.tab.active{color:#ffffff!important}
+[data-theme="light"] button.tab{color:#0b1020!important}
+[data-theme="light"] button{color:#ffffff!important}
+[data-theme="dark"] button.theme-toggle{color:#0b1020!important}
+[data-theme="dark"] button{color:#0b1020!important}
+</style>
+</head>
   <body>
     <header class="topbar">
       <h1>BlinkCode<span>AI</span></h1>
